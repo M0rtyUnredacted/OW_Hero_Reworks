@@ -1,0 +1,311 @@
+# ============================================================
+# HERO: [Hero Name]
+# REWORK VERSION: v1.0
+# LAST UPDATED: [YYYY-MM-DD]
+# DESCRIPTION: [One sentence summary of what this rework does]
+# ============================================================
+#
+# HOW TO USE:
+#   Copy the entire contents of this file, open the Overwatch
+#   Workshop Editor, click Import, and paste. Then save and
+#   start your custom game.
+#
+# ============================================================
+
+
+# === SETTINGS ===
+# Configures the game mode, hero availability, and lobby rules.
+# Adjust these to match the intended test environment.
+
+settings
+{
+    main
+    {
+        Description: "[Hero Name] Rework - v1.0"
+        Mode Name: "[Hero Name] Rework"
+    }
+
+    modes
+    {
+        # Replace with the desired game mode, e.g. Skirmish, Deathmatch
+        Skirmish
+        {
+            enabled maps
+            {
+                Skirmish
+            }
+        }
+    }
+
+    heroes
+    {
+        Team 1
+        {
+            # Restrict to the reworked hero so testers use the right character
+            # Example: disabled heroes { ... }
+        }
+    }
+}
+
+
+# === GLOBAL VARIABLES ===
+# Variables shared across the entire match (not tied to a specific player).
+# Use PascalCase names. Assign all numeric constants here with a comment
+# explaining the value — never use bare numbers in rules below.
+
+variables
+{
+    global:
+        # Example:
+        # 0: ReworkVersion              # Used in HUD display
+        # 1: SomeConstant               # Description of what this number means
+}
+
+
+# === PLAYER VARIABLES ===
+# Variables tied to individual players (cooldowns, counters, state flags).
+# Use PascalCase names.
+
+variables
+{
+    player:
+        # Example:
+        # 0: AbilityCharge              # Current charges for the modified ability
+        # 1: IsAbilityActive            # True while the ability is in use
+}
+
+
+# === SUBROUTINES ===
+# Named action blocks that can be called from multiple rules.
+# Add one entry per subroutine, then define the matching rule below.
+
+subroutines
+{
+    # Example:
+    # 0: ResetAbilityState
+}
+
+
+# ============================================================
+# === INITIALIZATION ===
+# Runs once when the match starts.
+# Sets all global and player variable defaults.
+# ============================================================
+
+rule("Init - [Hero Name] Rework")
+{
+    event
+    {
+        Ongoing - Global;
+    }
+
+    actions
+    {
+        # Set global constants
+        # Global Variable(ReworkVersion) = 1.0;
+
+        # Set player variable defaults for all players
+        # For All Players(All Teams) Do:
+        #   Set Player Variable([Hero Name] player, AbilityCharge, 0);
+    }
+}
+
+
+# ============================================================
+# === ABILITY: [ABILITY NAME] ===
+# Describe what this ability does in the rework (plain English).
+# Add as many rules as needed — one per distinct trigger or effect.
+# Rule naming format: "[Ability] - [What this rule does]"
+# ============================================================
+
+rule("[Ability Name] - Detect Activation")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        All;
+    }
+
+    conditions
+    {
+        # Condition that detects the ability being used
+        # Example: Is Button Held(Event Player, Button(Ability 1)) == True;
+    }
+
+    actions
+    {
+        # Actions to perform when the ability fires
+    }
+}
+
+rule("[Ability Name] - Apply Effect")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        All;
+    }
+
+    conditions
+    {
+        # Condition(s) that trigger the effect
+    }
+
+    actions
+    {
+        # The actual gameplay effect (damage, movement, healing, etc.)
+    }
+}
+
+rule("[Ability Name] - Reset on Death")
+{
+    event
+    {
+        Player Died;
+        All;
+        All;
+    }
+
+    actions
+    {
+        # Clean up any active effects and reset variables when the player dies
+    }
+}
+
+
+# ============================================================
+# === ABILITY: [SECOND ABILITY NAME] ===
+# Add additional ability sections here, one per modified ability.
+# ============================================================
+
+# (Copy the ability block above and fill in for each additional ability)
+
+
+# ============================================================
+# === PASSIVE ===
+# Rules for any passive modifications.
+# Remove this section if the passive is unchanged.
+# ============================================================
+
+rule("Passive - [Description]")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        All;
+    }
+
+    conditions
+    {
+        # Condition(s) that trigger the passive effect
+    }
+
+    actions
+    {
+        # Passive effect logic
+    }
+}
+
+
+# ============================================================
+# === ULTIMATE ===
+# Rules for ultimate ability modifications.
+# Remove this section if the ultimate is unchanged.
+# ============================================================
+
+rule("Ultimate - Detect Activation")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        All;
+    }
+
+    conditions
+    {
+        # Example: Is Using Ultimate(Event Player) == True;
+    }
+
+    actions
+    {
+        # Custom ultimate logic
+    }
+}
+
+
+# ============================================================
+# === UTILITY ===
+# Miscellaneous rules that support multiple abilities.
+# Examples: respawn cleanup, cross-ability interactions,
+# variable resets that apply globally.
+# ============================================================
+
+rule("Utility - On Respawn Cleanup")
+{
+    event
+    {
+        Player Joined Match;
+        All;
+        All;
+    }
+
+    actions
+    {
+        # Reset all player variables to defaults on respawn/rejoin
+    }
+}
+
+
+# ============================================================
+# === HUD / VISUAL FEEDBACK ===
+# Rules that display on-screen text or create visual indicators.
+# Kept separate so this block can be removed without affecting
+# any gameplay logic above.
+# ============================================================
+
+rule("HUD - Display Rework Info")
+{
+    event
+    {
+        Ongoing - Global;
+    }
+
+    actions
+    {
+        # Example: display the rework name and version in the top-left corner
+        # Create HUD Text(All Players(All Teams), Null, Null,
+        #   String("{0} Rework v{1}", [Hero Name], Global Variable(ReworkVersion)),
+        #   Top, 0, Color(White), Color(White), Color(White),
+        #   Visible To and String, Default Visibility);
+    }
+}
+
+rule("HUD - [Ability Name] Charge Display")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        All;
+    }
+
+    conditions
+    {
+        # Only show for the relevant hero
+        # Example: Hero Of(Event Player) == Hero([Hero Name]);
+    }
+
+    actions
+    {
+        # Display ability-specific info (charges, cooldown state, etc.)
+    }
+}
+
+
+# ============================================================
+# END OF SCRIPT — [Hero Name] Rework v1.0
+# ============================================================

@@ -1,0 +1,10 @@
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor scratch files
+*.swp
+*~
+.vscode/
+.idea/
