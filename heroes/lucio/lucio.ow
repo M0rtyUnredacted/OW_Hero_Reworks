@@ -1,0 +1,233 @@
+# ============================================================
+# HERO: Lúcio
+# REWORK VERSION: v1.0
+# LAST UPDATED: 2026-03-21
+# DESCRIPTION: Kinetic Rhythm — healing dealt scales with
+#              momentum; velocity is the core resource.
+# ============================================================
+#
+# HOW TO USE:
+#   Copy the entire contents of this file, open the Overwatch
+#   Workshop Editor, click Import, and paste. Then save and
+#   start your custom game.
+#
+# ============================================================
+
+
+# === PLAYER VARIABLES ===
+# Short names are intentional — Workshop variable slots are limited
+# and these are referenced frequently inside the hot loop.
+
+variables
+{
+    player:
+        0: R    # Kinetic Charge  — live charge value; drives healing dealt
+        1: H    # Healing Dealt   — modifier derived from R each 0.25s tick
+        2: M    # Peak Charge     — historical max this life (HUD display only)
+        3: P    # Protection      — decay-pause timer in seconds (set by Amp/Ult)
+}
+
+
+# ============================================================
+# === INITIALIZATION + MAIN LOOP ===
+# Sets up HUD elements, initializes all variables to zero,
+# then enters a perpetual 4 Hz loop that:
+#   - Derives H (healing dealt) from R (charge)
+#   - Updates peak charge M
+#   - Applies 8% decay above 50 charge, flat 0.375 below
+#   - Accumulates charge gain from speed while P == 0
+# ============================================================
+
+rule("Lucio: Kinetic Rhythm Init & 4Hz Loop")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        Lúcio;
+    }
+
+    actions
+    {
+        Event Player.R = 0;
+        Event Player.H = 0;
+        Event Player.M = 0;
+        Event Player.P = 0;
+
+        Create HUD Text(Event Player, Custom String("LIVE CHARGE: {0}", Round To Integer(Event Player.R, Down)), Null, Null, Top, 1, Color(Green), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Event Player, Custom String("PEAK CHARGE: {0}", Round To Integer(Event Player.M, Down)), Null, Null, Top, 2, Color(Purple), Color(White), Color(White), Visible To and String, Default Visibility);
+
+        Create HUD Text(Event Player, Null, Null, Custom String("KINETIC REWORK: Dmg generation scales directly with your Velocity."), Left, 3, Color(White), Color(White), Color(Aqua), Visible To and String, Default Visibility);
+        Create HUD Text(Event Player, Null, Null, Custom String("High velocity (momentum) builds charge. >50 decays at 8% per tick."), Left, 4, Color(White), Color(White), Color(Aqua), Visible To and String, Default Visibility);
+        Create HUD Text(Event Player, Null, Null, Custom String("Amp/Beat sets floor to 40 & pauses decay for 3s. Uncapped scaling."), Left, 5, Color(White), Color(White), Color(Aqua), Visible To and String, Default Visibility);
+
+        While(True);
+            If(Event Player.R <= 50);
+                Event Player.H = Event Player.R * 2;
+            Else;
+                Event Player.H = 100 + (Event Player.R - 50);
+            End;
+            Set Healing Dealt(Event Player, Event Player.H);
+
+            Event Player.M = Max(Event Player.M, Event Player.R);
+
+            If(Event Player.P > 0);
+                Event Player.P -= 0.250;
+            Else;
+                Event Player.R += Max(0, (Horizontal Speed Of(Event Player) - 5.500) * 0.250);
+
+                If(Event Player.R > 50);
+                    Event Player.R -= (Event Player.R * 0.080);
+                Else;
+                    Event Player.R -= 0.375;
+                End;
+            End;
+
+            Event Player.R = Max(0, Event Player.R);
+            Wait(0.250, Ignore Condition);
+        End;
+    }
+}
+
+
+# ============================================================
+# === KINETIC BATTERY ===
+# Dealing damage generates charge proportional to current speed.
+# Faster movement = more charge per hit. Rewards aggressive,
+# mobile play over stationary booping.
+# ============================================================
+
+rule("Lucio: Kinetic Battery (Damage Handlers)")
+{
+    event
+    {
+        Player Dealt Damage;
+        All;
+        Lúcio;
+    }
+
+    conditions
+    {
+        Event Was Environment == False;
+    }
+
+    actions
+    {
+        Event Player.R += Event Damage * (Horizontal Speed Of(Event Player) / 5.500);
+    }
+}
+
+
+# ============================================================
+# === THE DROP ===
+# Environmental kills (boops off the map) grant a flat +50
+# charge burst and a sound cue — rewards map awareness and
+# creative use of Soundwave.
+# ============================================================
+
+rule("Lucio: The Drop (Environmental Kill)")
+{
+    event
+    {
+        Player Earned Elimination;
+        All;
+        Lúcio;
+    }
+
+    conditions
+    {
+        Event Was Environment == True;
+    }
+
+    actions
+    {
+        Event Player.R += 50;
+        Play Effect(All Players(All Teams), Ring Explosion Sound, Color(White), Event Player, 100);
+    }
+}
+
+
+# ============================================================
+# === SOUND BARRIER RESONANCE ===
+# Using the ultimate floors charge at 40 and pauses decay for
+# 3 seconds, giving Lúcio and his team a window of peak output
+# during the barrier.
+# ============================================================
+
+rule("Lucio: Sound Barrier Resonance")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        Lúcio;
+    }
+
+    conditions
+    {
+        Is Using Ultimate(Event Player) == True;
+    }
+
+    actions
+    {
+        Event Player.R = Max(40, Event Player.R);
+        Event Player.P = 3.000;
+    }
+}
+
+
+# ============================================================
+# === DEATH RESET ===
+# Charge is a momentum resource — dying resets it to zero.
+# Peak charge (M) is intentionally NOT reset so the HUD
+# reflects the high-water mark for the full session.
+# ============================================================
+
+rule("Lucio: Death State Reset")
+{
+    event
+    {
+        Player Died;
+        All;
+        Lúcio;
+    }
+
+    actions
+    {
+        Event Player.R = 0;
+    }
+}
+
+
+# ============================================================
+# === AMP OVERRIDE ===
+# Amp It Up mirrors the ult's floor/pause behaviour on a
+# shorter window, giving Lúcio a short-duration burst
+# of reliable healing output during the amp window.
+# ============================================================
+
+rule("Lucio: Amp Override")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        Lúcio;
+    }
+
+    conditions
+    {
+        Is Using Ability 2(Event Player) == True;
+    }
+
+    actions
+    {
+        Event Player.R = Max(40, Event Player.R);
+        Event Player.P = 3.000;
+    }
+}
+
+
+# ============================================================
+# END OF SCRIPT — Lúcio Kinetic Rhythm Rework v1.0
+# ============================================================
