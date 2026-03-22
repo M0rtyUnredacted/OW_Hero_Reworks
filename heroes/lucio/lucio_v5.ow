@@ -1,0 +1,363 @@
+# ============================================================
+# HERO: Lúcio
+# REWORK VERSION: v5.0
+# LAST UPDATED: 2026-03-22
+# DESCRIPTION: Kinetic Rhythm V5 — Damage-driven charge engine
+#              with aura-asymmetric decay. Heal Aura is the
+#              "cash-out" (-25/s). Speed Aura is the "setup"
+#              (-5/s above 50 charge, zero below). Amp It Up
+#              locks charge for 3s and adds +10 overcap. Hard
+#              cap is 100 via raw damage; 110 via Amp only.
+# ============================================================
+#
+# HOW TO USE:
+#   Copy the entire contents of this file, open the Overwatch
+#   Workshop Editor, click Import, and paste. Then save and
+#   start your custom game.
+#
+# ============================================================
+#
+# HEALING CURVE:
+#   Multiplier = 0.50 + (Charge / 100)
+#   0 charge  → 50%  retail healing (10 HPS / 8 HPS self)
+#   50 charge → 100% retail healing (20 HPS / 16 HPS self)
+#   100 charge→ 150% retail healing (30 HPS / 24 HPS self)
+#   110 charge→ 160% retail healing (83.2 HPS while Amped)
+#
+# CHARGE ECONOMY:
+#   Generation  : Damage Dealt * (Horizontal Speed / 5.5)
+#                 Zero speed = zero gen. Standing = nothing.
+#   Hard Cap    : 100 via damage. 110 via Amp only.
+#   Speed Aura  : 0–50 charge → no decay
+#                 51–110 charge → -5/s linear bleed
+#   Heal Aura   : 0–110 charge → -25/s aggressive dump
+#   Amp Stasis  : +10 instant (overcap to 110), then 3s
+#                 freeze on all gen AND decay.
+#
+# ============================================================
+
+
+# === PLAYER VARIABLES ===
+# Slot count is tight — short names are intentional.
+
+variables
+{
+    player:
+        0: R     # Charge (0–110; damage caps at 100; Amp caps at 110)
+        1: M     # Peak Charge — session high-water mark (HUD only)
+        2: P     # Stasis timer — > 0 freezes all gen and decay
+        3: A     # Aura state: False = Heal Aura, True = Speed Aura
+        4: AB    # Previous Crossfade (Ability 1) button state — edge detection
+}
+
+
+# ============================================================
+# === INITIALIZATION + MAIN LOOP ===
+# Runs each spawn. Initializes variables, builds HUD, then
+# enters a perpetual 4 Hz (0.25s) loop that:
+#
+#   1. Applies healing multiplier: Set Healing Dealt = 50 + R
+#      (formula maps 0→50%, 50→100%, 110→160% of retail output)
+#
+#   2. Tracks peak charge (M = max seen this session).
+#
+#   3. Detects Crossfade presses via rising-edge on Ability 1.
+#      AB stores last frame state; False→True = new press.
+#
+#   4. Stasis check (P > 0): counts down timer, skips decay.
+#
+#   5. Aura decay (P == 0):
+#      Heal Aura  → -25/s = -6.25 per tick (always, 0–110)
+#      Speed Aura → -5/s  = -1.25 per tick (only when R > 50)
+#                   0 decay when R ≤ 50 on Speed Aura
+#
+#   6. Floor clamp: R = Max(0, R)
+# ============================================================
+
+rule("Lucio: Kinetic Rhythm V5 Init & 4Hz Loop")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        Lúcio;
+    }
+
+    actions
+    {
+        Event Player.R  = 0;
+        Event Player.M  = 0;
+        Event Player.P  = 0;
+        Event Player.A  = False;
+        Event Player.AB = False;
+
+        # HUD line 1: live charge and session peak
+        Create HUD Text(
+            Event Player,
+            Custom String("CHARGE: {0}  |  PEAK: {1}",
+                Round To Integer(Event Player.R, Down),
+                Round To Integer(Event Player.M, Down)),
+            Null, Null,
+            Top, 1,
+            Color(Green), Color(White), Color(White),
+            Visible To and String, Default Visibility
+        );
+
+        # HUD line 2: aura state + current healing percent
+        Create HUD Text(
+            Event Player,
+            Custom String("AURA: {0}  |  HEAL%: {1}%",
+                If(Event Player.A == True,
+                    Custom String("SPEED"),
+                    Custom String("HEAL")),
+                Round To Integer(50 + Event Player.R, Down)),
+            Null, Null,
+            Top, 2,
+            Color(Aqua), Color(White), Color(White),
+            Visible To and String, Default Visibility
+        );
+
+        # HUD line 3: stasis countdown (shows 0 when idle — fine for testing)
+        Create HUD Text(
+            Event Player,
+            Custom String("STASIS: {0}s",
+                Max(0, Round To Integer(Event Player.P, Up))),
+            Null, Null,
+            Top, 3,
+            Color(Yellow), Color(White), Color(White),
+            Visible To and String, Default Visibility
+        );
+
+        # Left-side instruction panel
+        Create HUD Text(
+            Event Player,
+            Null, Null,
+            Custom String("V5 ECONOMY: Gen = Dmg * (Speed/5.5). Cap 100 raw, 110 via Amp. Zero gen while still."),
+            Left, 4,
+            Color(White), Color(White), Color(Aqua),
+            Visible To and String, Default Visibility
+        );
+        Create HUD Text(
+            Event Player,
+            Null, Null,
+            Custom String("Heal Aura: -25/s. Speed Aura: -5/s above 50, 0 below. Amp: +10 overcap + 3s freeze."),
+            Left, 5,
+            Color(White), Color(White), Color(Aqua),
+            Visible To and String, Default Visibility
+        );
+
+        While(True);
+
+            # 1 — Healing multiplier: 50 + R maps linearly to retail output
+            Set Healing Dealt(Event Player, 50 + Event Player.R);
+
+            # 2 — Session peak
+            Event Player.M = Max(Event Player.M, Event Player.R);
+
+            # 3 — Crossfade edge detection (rising edge = new button press)
+            If(Is Button Held(Event Player, Button(Ability 1)) == True);
+                If(Event Player.AB == False);
+                    If(Event Player.A == True);
+                        Event Player.A = False;
+                    Else;
+                        Event Player.A = True;
+                    End;
+                End;
+                Event Player.AB = True;
+            Else;
+                Event Player.AB = False;
+            End;
+
+            # 4 — Stasis: freeze charge, tick down timer
+            If(Event Player.P > 0);
+                Event Player.P -= 0.250;
+                If(Event Player.P < 0);
+                    Event Player.P = 0;
+                End;
+
+            # 5 — Normal operation: aura-asymmetric linear decay
+            Else;
+                If(Event Player.A == False);
+                    # Heal Aura cash-out: -25/s = -6.25 per tick
+                    Event Player.R -= 6.250;
+                Else;
+                    # Speed Aura setup: -5/s above 50, zero below
+                    If(Event Player.R > 50);
+                        Event Player.R -= 1.250;
+                    End;
+                End;
+            End;
+
+            # 6 — Floor clamp
+            Event Player.R = Max(0, Event Player.R);
+
+            Wait(0.250, Ignore Condition);
+        End;
+    }
+}
+
+
+# ============================================================
+# === KINETIC BATTERY ===
+# Dealing damage generates charge:
+#   Gain = Damage Dealt * (Horizontal Speed / 5.5)
+# Standing still = 0 speed = 0 gain. Velocity is the engine.
+# Hard cap: 100 (breach to 110 via Amp only).
+# Blocked during stasis (P > 0) per the Amp spec.
+# ============================================================
+
+rule("Lucio: Kinetic Battery V5 (Damage → Charge)")
+{
+    event
+    {
+        Player Dealt Damage;
+        All;
+        Lúcio;
+    }
+
+    conditions
+    {
+        Event Was Environment == False;
+        Event Player.P == 0;
+        Event Player.R < 100;
+    }
+
+    actions
+    {
+        Event Player.R += Event Damage * (Horizontal Speed Of(Event Player) / 5.500);
+        If(Event Player.R > 100);
+            Event Player.R = 100;
+        End;
+    }
+}
+
+
+# ============================================================
+# === THE DROP ===
+# Environmental kills (boops off the map) grant +50 charge,
+# capped at the 100 hard cap. Sound cue confirms the hit.
+# ============================================================
+
+rule("Lucio: The Drop V5 (Environmental Kill)")
+{
+    event
+    {
+        Player Earned Elimination;
+        All;
+        Lúcio;
+    }
+
+    conditions
+    {
+        Event Was Environment == True;
+    }
+
+    actions
+    {
+        Event Player.R += 50;
+        If(Event Player.R > 100);
+            Event Player.R = 100;
+        End;
+        Play Effect(All Players(All Teams), Ring Explosion Sound, Color(White), Event Player, 100);
+    }
+}
+
+
+# ============================================================
+# === SOUND BARRIER RESONANCE ===
+# Using the ultimate activates a 3-second stasis window —
+# charge is completely frozen while the barrier is active.
+# Unlike Amp, this does NOT grant the +10 overcap bonus.
+# ============================================================
+
+rule("Lucio: Sound Barrier Resonance V5")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        Lúcio;
+    }
+
+    conditions
+    {
+        Is Using Ultimate(Event Player) == True;
+    }
+
+    actions
+    {
+        Event Player.P = 3.000;
+    }
+}
+
+
+# ============================================================
+# === DEATH RESET ===
+# Charge is a momentum resource — dying resets it to zero.
+# Stasis and aura state are also cleared so no carry-over
+# bleeds into the new life. Peak (M) is intentionally kept;
+# it is the session high-water mark, not a per-life value.
+# ============================================================
+
+rule("Lucio: Death State Reset V5")
+{
+    event
+    {
+        Player Died;
+        All;
+        Lúcio;
+    }
+
+    actions
+    {
+        Event Player.R  = 0;
+        Event Player.P  = 0;
+        Event Player.A  = False;
+        Event Player.AB = False;
+    }
+}
+
+
+# ============================================================
+# === AMP IT UP (STASIS OVERCAP) ===
+# The ONLY mechanism that breaches the 100 charge hard cap.
+#
+#   Step 1 — Overcap: +10 charge instantly (ceiling: 110).
+#             This locks in your earned multiplier and adds
+#             a 10-point bonus on top.
+#
+#   Step 2 — Stasis: P = 3s. The main loop freezes all
+#             generation and all decay for the full duration.
+#             When stasis breaks, the active aura's decay rate
+#             (Heal: -25/s or Speed: -5/s above 50) resumes
+#             immediately.
+# ============================================================
+
+rule("Lucio: Amp It Up V5 (Stasis Overcap)")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        Lúcio;
+    }
+
+    conditions
+    {
+        Is Using Ability 2(Event Player) == True;
+    }
+
+    actions
+    {
+        Event Player.R += 10;
+        If(Event Player.R > 110);
+            Event Player.R = 110;
+        End;
+        Event Player.P = 3.000;
+    }
+}
+
+
+# ============================================================
+# END OF SCRIPT — Lúcio Kinetic Rhythm Rework v5.0
+# ============================================================
