@@ -31,7 +31,9 @@ rule("Init: System Variables & Disable Turrets")
         Event Player.Ult_Matrix_Active = False;
         Event Player.Dmg_Acc = 0;
         Chase Player Variable At Rate(Event Player, Surge_CD, 0, 1, Destination and Rate);
-        Create HUD Text(Event Player, If(Event Player.Surge_Active == True, Custom String("*** SURGE ACTIVE: {0}s ***", Round To Integer(Event Player.Surge_Dur, Up)), If(Event Player.Surge_CD <= 0, Custom String("SURGE: READY"), Custom String("SURGE CD: {0}s", Round To Integer(Event Player.Surge_CD, Up)))), Null, Null, Top, 1, Color(Yellow), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Filtered Array(Array(Event Player), Event Player.Surge_Active == True), Custom String("*** SURGE: {0}s ***", Round To Integer(Event Player.Surge_Dur, Up)), Null, Null, Top, 1, Color(Yellow), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Filtered Array(Array(Event Player), And(Event Player.Surge_Active == False, Event Player.Surge_CD > 0)), Custom String("SURGE CD: {0}s", Round To Integer(Event Player.Surge_CD, Up)), Null, Null, Top, 1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Filtered Array(Array(Event Player), And(Event Player.Surge_Active == False, Event Player.Surge_CD <= 0)), Custom String("SURGE: READY"), Null, Null, Top, 1, Color(Green), Color(White), Color(White), Visible To and String, Default Visibility);
         Create HUD Text(Event Player, Custom String("COMBO: {0}/250", Round To Integer(Event Player.Dmg_Acc, Down)), Null, Null, Top, 2, Color(Green), Color(White), Color(White), Visible To and String, Default Visibility);
     }
 }
