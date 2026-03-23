@@ -1,42 +1,11 @@
-# ============================================================
-# HERO: Lúcio
-# REWORK VERSION: v1.0
-# LAST UPDATED: 2026-03-21
-# DESCRIPTION: Kinetic Rhythm — healing dealt scales with
-#              momentum; velocity is the core resource.
-# ============================================================
-#
-# HOW TO USE:
-#   Copy the entire contents of this file, open the Overwatch
-#   Workshop Editor, click Import, and paste. Then save and
-#   start your custom game.
-#
-# ============================================================
-
-
-# === PLAYER VARIABLES ===
-# Short names are intentional — Workshop variable slots are limited
-# and these are referenced frequently inside the hot loop.
-
 variables
 {
     player:
-        0: R    # Kinetic Charge  — live charge value; drives healing dealt
-        1: H    # Healing Dealt   — modifier derived from R each 0.25s tick
-        2: M    # Peak Charge     — historical max this life (HUD display only)
-        3: P    # Protection      — decay-pause timer in seconds (set by Amp/Ult)
+        0: R
+        1: H
+        2: M
+        3: P
 }
-
-
-# ============================================================
-# === INITIALIZATION + MAIN LOOP ===
-# Sets up HUD elements, initializes all variables to zero,
-# then enters a perpetual 4 Hz loop that:
-#   - Derives H (healing dealt) from R (charge)
-#   - Updates peak charge M
-#   - Applies 8% decay above 50 charge, flat 0.375 below
-#   - Accumulates charge gain from speed while P == 0
-# ============================================================
 
 rule("Lucio: Kinetic Rhythm Init & 4Hz Loop")
 {
@@ -89,14 +58,6 @@ rule("Lucio: Kinetic Rhythm Init & 4Hz Loop")
     }
 }
 
-
-# ============================================================
-# === KINETIC BATTERY ===
-# Dealing damage generates charge proportional to current speed.
-# Faster movement = more charge per hit. Rewards aggressive,
-# mobile play over stationary booping.
-# ============================================================
-
 rule("Lucio: Kinetic Battery (Damage Handlers)")
 {
     event
@@ -116,14 +77,6 @@ rule("Lucio: Kinetic Battery (Damage Handlers)")
         Event Player.R += Event Damage * (Horizontal Speed Of(Event Player) / 5.500);
     }
 }
-
-
-# ============================================================
-# === THE DROP ===
-# Environmental kills (boops off the map) grant a flat +50
-# charge burst and a sound cue — rewards map awareness and
-# creative use of Soundwave.
-# ============================================================
 
 rule("Lucio: The Drop (Environmental Kill)")
 {
@@ -146,14 +99,6 @@ rule("Lucio: The Drop (Environmental Kill)")
     }
 }
 
-
-# ============================================================
-# === SOUND BARRIER RESONANCE ===
-# Using the ultimate floors charge at 40 and pauses decay for
-# 3 seconds, giving Lúcio and his team a window of peak output
-# during the barrier.
-# ============================================================
-
 rule("Lucio: Sound Barrier Resonance")
 {
     event
@@ -175,14 +120,6 @@ rule("Lucio: Sound Barrier Resonance")
     }
 }
 
-
-# ============================================================
-# === DEATH RESET ===
-# Charge is a momentum resource — dying resets it to zero.
-# Peak charge (M) is intentionally NOT reset so the HUD
-# reflects the high-water mark for the full session.
-# ============================================================
-
 rule("Lucio: Death State Reset")
 {
     event
@@ -197,14 +134,6 @@ rule("Lucio: Death State Reset")
         Event Player.R = 0;
     }
 }
-
-
-# ============================================================
-# === AMP OVERRIDE ===
-# Amp It Up mirrors the ult's floor/pause behaviour on a
-# shorter window, giving Lúcio a short-duration burst
-# of reliable healing output during the amp window.
-# ============================================================
 
 rule("Lucio: Amp Override")
 {
@@ -226,8 +155,3 @@ rule("Lucio: Amp Override")
         Event Player.P = 3.000;
     }
 }
-
-
-# ============================================================
-# END OF SCRIPT — Lúcio Kinetic Rhythm Rework v1.0
-# ============================================================
