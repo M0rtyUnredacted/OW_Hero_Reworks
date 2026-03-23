@@ -170,11 +170,6 @@ rule("Passive: Primary Fire Lifesteal")
         Symmetra;
     }
 
-    conditions
-    {
-        Event Ability == Button(Primary Fire);
-    }
-
     actions
     {
         Heal(Event Player, Event Player, Event Damage * 0.200);
@@ -192,7 +187,6 @@ rule("Passive: Kinetic Battery (Secondary Fire CDR)")
 
     conditions
     {
-        Event Ability == Button(Secondary Fire);
         Event Damage >= 50;
     }
 
