@@ -19,9 +19,10 @@ A collection of custom hero reworks built in the Overwatch Workshop. Each rework
 
 ## Hero Index
 
-| Hero | Status | Last Updated |
-|---|---|---|
-| *(No reworks yet — check back soon)* | — | — |
+| Hero | Current Version | Scripts | Last Updated |
+|---|---|---|---|
+| [Lúcio](heroes/lucio/) | v5.0 | [v1.0](heroes/lucio/lucio.ow) · [v5.0](heroes/lucio/lucio_v5.ow) | 2026-03-22 |
+| [Symmetra](heroes/symmetra/) | v1.0 | [v1.0](heroes/symmetra/symmetra.ow) | 2026-03-21 |
 
 ---
 
@@ -40,16 +41,19 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for naming rules and full workflow.
 
 ```
 OW_Hero_Reworks/
-├── README.md          ← You are here
-├── CONTRIBUTING.md    ← Workflow guide for coordinators
+├── README.md              ← You are here
+├── CONTRIBUTING.md        ← Workflow guide for coordinators
 ├── .gitignore
-├── _template/         ← Copy this to start a new hero
+├── _template/             ← Copy this to start a new hero
 │   ├── hero.ow
 │   ├── design-doc.md
 │   └── CHANGELOG.md
 └── heroes/
     └── <hero-slug>/
-        ├── <hero-slug>.ow   ← The Workshop script (paste this in-game)
-        ├── design-doc.md    ← Design brief for this rework
-        └── CHANGELOG.md     ← History of changes
+        ├── <hero-slug>.ow        ← Latest Workshop script (paste this in-game)
+        ├── <hero-slug>_v*.ow     ← Versioned scripts (kept for reference)
+        ├── design-doc.md         ← Design brief for this rework
+        ├── CHANGELOG.md          ← History of all versions
+        ├── BRAINSTORMING.md      ← Ideation and future iteration notes
+        └── CURRENT_BUILD.md      ← Quick-reference for the live version
 ```
