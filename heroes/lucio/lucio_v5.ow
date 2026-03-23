@@ -1,11 +1,11 @@
 variables
 {
     player:
-        0: R
-        1: M
-        2: P
-        3: A
-        4: AB
+        10: R
+        11: M
+        12: P
+        13: A
+        14: AB
 }
 
 rule("Lucio: Kinetic Rhythm V5 Init & 4Hz Loop")
