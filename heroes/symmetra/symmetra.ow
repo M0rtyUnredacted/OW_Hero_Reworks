@@ -1,44 +1,16 @@
-# ============================================================
-# HERO: Symmetra
-# REWORK VERSION: v1.0
-# LAST UPDATED: 2026-03-21
-# DESCRIPTION: Battlemage — Surge replaces turrets; dealing
-#              damage while mobile reduces Surge cooldown and
-#              resets Teleporter. Allies near an active Surge
-#              gain shields, HoT, and speed.
-# ============================================================
-#
-# HOW TO USE:
-#   Copy the entire contents of this file, open the Overwatch
-#   Workshop Editor, click Import, and paste. Then save and
-#   start your custom game.
-#
-# ============================================================
-
-
-# === PLAYER VARIABLES ===
-
 variables
 {
     player:
-        0: Surge_Active         # True while Surge self-buff is running
-        1: Surge_CD             # Cooldown counter in seconds (Chase drains to 0)
-        2: Surge_VFX            # Entity handle for the active Surge sparkle effect
-        3: Ult_Matrix_Active    # True while Siege Matrix ultimate is running
-        4: Aura_Buffed          # True while this player is inside a Surge aura
-        5: Bunker_Health_Pool   # Handle to the extra shield pool granted by aura
-        6: Bunker_HoT           # Heal-over-time ID granted by aura
-        7: Dmg_Acc              # Damage accumulator for passive CDR (resets every 250)
-        8: Aura_Check           # Temp flag: True if player should be aura-buffed this tick
+        0: Surge_Active
+        1: Surge_CD
+        2: Surge_VFX
+        3: Ult_Matrix_Active
+        4: Aura_Buffed
+        5: Bunker_Health_Pool
+        6: Bunker_HoT
+        7: Dmg_Acc
+        8: Aura_Check
 }
-
-
-# ============================================================
-# === INITIALIZATION ===
-# Runs each spawn. Disables Sentry Turrets (Ability 1 becomes
-# the Surge trigger), resets all variables, starts the passive
-# cooldown Chase, and creates the HUD display elements.
-# ============================================================
 
 rule("Init: System Variables & Disable Turrets")
 {
@@ -52,59 +24,16 @@ rule("Init: System Variables & Disable Turrets")
     actions
     {
         Set Ability 1 Enabled(Event Player, False);
-
         Event Player.Surge_CD = 0;
         Event Player.Surge_Active = False;
         Event Player.Ult_Matrix_Active = False;
         Event Player.Dmg_Acc = 0;
-
         Chase Player Variable At Rate(Event Player, Surge_CD, 0, 1, Destination and Rate);
-
-        # HUD — Surge state line (top row, color shifts with state)
-        Create HUD Text(
-            Event Player,
-            Custom String("*** SURGE ACTIVE ***", Null, Null, Null),
-            Null,
-            Null,
-            Top, 1,
-            Color(Yellow), Color(White), Color(White),
-            Visible To and String,
-            Default Visibility
-        );
-
-        # HUD — Surge cooldown / ready line
-        Create HUD Text(
-            Event Player,
-            Custom String("SURGE CD: {0}s", Round To Integer(Event Player.Surge_CD, Up)),
-            Null,
-            Null,
-            Top, 2,
-            Color(White), Color(White), Color(White),
-            Visible To and String,
-            Default Visibility
-        );
-
-        # HUD — Passive combo meter
-        Create HUD Text(
-            Event Player,
-            Custom String("COMBO: {0}/250", Round To Integer(Event Player.Dmg_Acc, Down)),
-            Null,
-            Null,
-            Top, 3,
-            Color(Green), Color(White), Color(White),
-            Visible To and String,
-            Default Visibility
-        );
+        Create HUD Text(Event Player, Custom String("*** SURGE ACTIVE ***", Null, Null, Null), Null, Null, Top, 1, Color(Yellow), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Event Player, Custom String("SURGE CD: {0}s", Round To Integer(Event Player.Surge_CD, Up)), Null, Null, Top, 2, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Event Player, Custom String("COMBO: {0}/250", Round To Integer(Event Player.Dmg_Acc, Down)), Null, Null, Top, 3, Color(Green), Color(White), Color(White), Visible To and String, Default Visibility);
     }
 }
-
-
-# ============================================================
-# === PASSIVE: SHIELD VAMPIRE (COMBAT CDR) ===
-# Every 250 cumulative damage dealt reduces Surge_CD by 1s
-# and cuts 1s off the native Teleporter cooldown.
-# The accumulator carries over — no damage is wasted.
-# ============================================================
 
 rule("Passive: Shield Vampire (Combat CDR)")
 {
@@ -118,7 +47,6 @@ rule("Passive: Shield Vampire (Combat CDR)")
     actions
     {
         Event Player.Dmg_Acc += Event Damage;
-
         If(Event Player.Dmg_Acc >= 250);
             Event Player.Surge_CD -= 1;
             If(Ability Cooldown(Event Player, Button(Ability 2)) > 0);
@@ -128,15 +56,6 @@ rule("Passive: Shield Vampire (Combat CDR)")
         End;
     }
 }
-
-
-# ============================================================
-# === ABILITY 1: SURGE (SELF-BUFF) ===
-# Press Shift (Ability 1) to activate Surge:
-#   +30% move speed, +30% damage dealt, sparkle VFX.
-# Lasts 6 seconds. 14-second cooldown (reduced by passive).
-# Cannot activate while ultimate is running.
-# ============================================================
 
 rule("Ability 1: Surge (Self-Buff)")
 {
@@ -158,15 +77,11 @@ rule("Ability 1: Surge (Self-Buff)")
     {
         Event Player.Surge_Active = True;
         Event Player.Surge_CD = 14;
-
         Set Move Speed(Event Player, 130);
         Set Damage Dealt(Event Player, 130);
-
         Create Effect(All Players(All Teams), Sparkles, Color(Yellow), Event Player, 1.5, Visible To Position and Radius);
         Event Player.Surge_VFX = Last Created Entity;
-
         Wait(6, Ignore Condition);
-
         If(Event Player.Ult_Matrix_Active == False);
             Set Move Speed(Event Player, 100);
             Set Damage Dealt(Event Player, 100);
@@ -175,13 +90,6 @@ rule("Ability 1: Surge (Self-Buff)")
         End;
     }
 }
-
-
-# ============================================================
-# === COMBAT LOOP: SURGE LIFESTEAL ===
-# While Surge is active, all damage dealt heals Symmetra
-# for 30% of the damage done.
-# ============================================================
 
 rule("Combat Loop: Surge Lifesteal")
 {
@@ -203,14 +111,6 @@ rule("Combat Loop: Surge Lifesteal")
     }
 }
 
-
-# ============================================================
-# === DEATH CLEANUP ===
-# Destroys any active Surge VFX and resets all combat state
-# immediately on death. Prevents sparkles and stat modifiers
-# from leaking into the next life.
-# ============================================================
-
 rule("Cleanup: Death Reset")
 {
     event
@@ -228,14 +128,6 @@ rule("Cleanup: Death Reset")
         Set Damage Dealt(Event Player, 100);
     }
 }
-
-
-# ============================================================
-# === ULTIMATE: SIEGE MATRIX ===
-# Immediately resets Teleporter, activates an extended 12s Surge
-# (aqua VFX instead of yellow), and expands the aura window for
-# allies. Surge re-activates automatically post-ult.
-# ============================================================
 
 rule("Ultimate: Siege Matrix")
 {
@@ -258,18 +150,14 @@ rule("Ultimate: Siege Matrix")
         Event Player.Surge_CD = 0;
         Set Ability Cooldown(Event Player, Button(Ability 2), 0);
         Press Button(Event Player, Button(Ability 2));
-
         Destroy Effect(Event Player.Surge_VFX);
         Event Player.Ult_Matrix_Active = True;
         Event Player.Surge_Active = True;
         Set Move Speed(Event Player, 130);
         Set Damage Dealt(Event Player, 130);
-
         Create Effect(All Players(All Teams), Sparkles, Color(Aqua), Event Player, 2, Visible To Position and Radius);
         Event Player.Surge_VFX = Last Created Entity;
-
         Wait(12, Ignore Condition);
-
         Event Player.Ult_Matrix_Active = False;
         Event Player.Surge_Active = False;
         Set Move Speed(Event Player, 100);
@@ -277,16 +165,6 @@ rule("Ultimate: Siege Matrix")
         Destroy Effect(Event Player.Surge_VFX);
     }
 }
-
-
-# ============================================================
-# === AURA: COMMAND AURA LOOP ===
-# Runs every 0.25s for every non-Symmetra player on Symmetra's
-# team. While a Symmetra teammate has Surge or Matrix active
-# AND this player is within 15m, grants:
-#   +75 bonus shields (recoverable), 30 HP/s HoT, +15% speed.
-# Removes all three the moment the condition lapses.
-# ============================================================
 
 rule("Aura: Command Aura Loop")
 {
@@ -305,10 +183,7 @@ rule("Aura: Command Aura Loop")
     actions
     {
         Wait(0.250, Ignore Condition);
-
-        # Step 1: determine if this player should be aura-buffed this tick
         Event Player.Aura_Check = False;
-
         If(Distance Between(Position Of(Event Player), Position Of(Value In Array(Players On Hero(Hero(Symmetra), Team Of(Event Player)), 0))) <= 15);
             If(Value In Array(Players On Hero(Hero(Symmetra), Team Of(Event Player)), 0).Surge_Active == True);
                 Event Player.Aura_Check = True;
@@ -317,8 +192,6 @@ rule("Aura: Command Aura Loop")
                 Event Player.Aura_Check = True;
             End;
         End;
-
-        # Step 2: apply or remove buffs based on check result
         If(Event Player.Aura_Check == True);
             If(Event Player.Aura_Buffed == False);
                 Event Player.Aura_Buffed = True;
@@ -336,12 +209,6 @@ rule("Aura: Command Aura Loop")
                 Stop Heal Over Time(Event Player.Bunker_HoT);
             End;
         End;
-
         Loop;
     }
 }
-
-
-# ============================================================
-# END OF SCRIPT — Symmetra Battlemage Rework v1.0
-# ============================================================
