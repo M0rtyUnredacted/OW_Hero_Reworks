@@ -1,11 +1,11 @@
 variables
 {
     player:
-        0: R
-        1: M
-        2: P
-        3: A
-        4: AB
+        0: LucioCharge
+        1: LucioPeak
+        2: LucioStasis
+        3: LucioAura
+        4: LucioPrevBtn
 }
 
 rule("Lucio: Kinetic Rhythm V5 Init & 4Hz Loop")
@@ -19,17 +19,17 @@ rule("Lucio: Kinetic Rhythm V5 Init & 4Hz Loop")
 
     actions
     {
-        Event Player.R  = 0;
-        Event Player.M  = 0;
-        Event Player.P  = 0;
-        Event Player.A  = False;
-        Event Player.AB = False;
+        Event Player.LucioCharge  = 0;
+        Event Player.LucioPeak    = 0;
+        Event Player.LucioStasis  = 0;
+        Event Player.LucioAura    = False;
+        Event Player.LucioPrevBtn = False;
 
         Create HUD Text(
             Event Player,
             Custom String("CHARGE: {0}  |  PEAK: {1}",
-                Round To Integer(Event Player.R, Down),
-                Round To Integer(Event Player.M, Down)),
+                Round To Integer(Event Player.LucioCharge, Down),
+                Round To Integer(Event Player.LucioPeak, Down)),
             Null, Null,
             Top, 1,
             Color(Green), Color(White), Color(White),
@@ -39,8 +39,8 @@ rule("Lucio: Kinetic Rhythm V5 Init & 4Hz Loop")
         Create HUD Text(
             Event Player,
             Custom String("AURA: {0}  |  HEAL%: {1}%",
-                First Of(Filtered Array(Array(Custom String("HEAL"), Custom String("SPEED")), Current Array Index == Event Player.A)),
-                Round To Integer(50 + Event Player.R, Down)),
+                First Of(Filtered Array(Array(Custom String("HEAL"), Custom String("SPEED")), Current Array Index == Event Player.LucioAura)),
+                Round To Integer(50 + Event Player.LucioCharge, Down)),
             Null, Null,
             Top, 2,
             Color(Aqua), Color(White), Color(White),
@@ -50,7 +50,7 @@ rule("Lucio: Kinetic Rhythm V5 Init & 4Hz Loop")
         Create HUD Text(
             Event Player,
             Custom String("STASIS: {0}s",
-                Max(0, Round To Integer(Event Player.P, Up))),
+                Max(0, Round To Integer(Event Player.LucioStasis, Up))),
             Null, Null,
             Top, 3,
             Color(Yellow), Color(White), Color(White),
@@ -77,39 +77,39 @@ rule("Lucio: Kinetic Rhythm V5 Init & 4Hz Loop")
 
         While(True);
 
-            Set Healing Dealt(Event Player, 50 + Event Player.R);
+            Set Healing Dealt(Event Player, 50 + Event Player.LucioCharge);
 
-            Event Player.M = Max(Event Player.M, Event Player.R);
+            Event Player.LucioPeak = Max(Event Player.LucioPeak, Event Player.LucioCharge);
 
             If(Is Button Held(Event Player, Button(Ability 1)) == True);
-                If(Event Player.AB == False);
-                    If(Event Player.A == True);
-                        Event Player.A = False;
+                If(Event Player.LucioPrevBtn == False);
+                    If(Event Player.LucioAura == True);
+                        Event Player.LucioAura = False;
                     Else;
-                        Event Player.A = True;
+                        Event Player.LucioAura = True;
                     End;
                 End;
-                Event Player.AB = True;
+                Event Player.LucioPrevBtn = True;
             Else;
-                Event Player.AB = False;
+                Event Player.LucioPrevBtn = False;
             End;
 
-            If(Event Player.P > 0);
-                Event Player.P -= 0.250;
-                If(Event Player.P < 0);
-                    Event Player.P = 0;
+            If(Event Player.LucioStasis > 0);
+                Event Player.LucioStasis -= 0.250;
+                If(Event Player.LucioStasis < 0);
+                    Event Player.LucioStasis = 0;
                 End;
             Else;
-                If(Event Player.A == False);
-                    Event Player.R -= 6.250;
+                If(Event Player.LucioAura == False);
+                    Event Player.LucioCharge -= 6.250;
                 Else;
-                    If(Event Player.R > 50);
-                        Event Player.R -= 1.250;
+                    If(Event Player.LucioCharge > 50);
+                        Event Player.LucioCharge -= 1.250;
                     End;
                 End;
             End;
 
-            Event Player.R = Max(0, Event Player.R);
+            Event Player.LucioCharge = Max(0, Event Player.LucioCharge);
 
             Wait(0.250, Ignore Condition);
         End;
@@ -128,15 +128,15 @@ rule("Lucio: Kinetic Battery V5 (Damage -> Charge)")
     conditions
     {
         Event Was Environment == False;
-        Event Player.P == 0;
-        Event Player.R < 100;
+        Event Player.LucioStasis == 0;
+        Event Player.LucioCharge < 100;
     }
 
     actions
     {
-        Event Player.R += Event Damage * (Horizontal Speed Of(Event Player) / 5.500);
-        If(Event Player.R > 100);
-            Event Player.R = 100;
+        Event Player.LucioCharge += Event Damage * (Horizontal Speed Of(Event Player) / 5.500);
+        If(Event Player.LucioCharge > 100);
+            Event Player.LucioCharge = 100;
         End;
     }
 }
@@ -157,9 +157,9 @@ rule("Lucio: The Drop V5 (Environmental Kill)")
 
     actions
     {
-        Event Player.R += 50;
-        If(Event Player.R > 100);
-            Event Player.R = 100;
+        Event Player.LucioCharge += 50;
+        If(Event Player.LucioCharge > 100);
+            Event Player.LucioCharge = 100;
         End;
         Play Effect(All Players(All Teams), Ring Explosion Sound, Color(White), Event Player, 100);
     }
@@ -181,7 +181,7 @@ rule("Lucio: Sound Barrier Resonance V5")
 
     actions
     {
-        Event Player.P = 3.000;
+        Event Player.LucioStasis = 3.000;
     }
 }
 
@@ -196,10 +196,10 @@ rule("Lucio: Death State Reset V5")
 
     actions
     {
-        Event Player.R  = 0;
-        Event Player.P  = 0;
-        Event Player.A  = False;
-        Event Player.AB = False;
+        Event Player.LucioCharge  = 0;
+        Event Player.LucioStasis  = 0;
+        Event Player.LucioAura    = False;
+        Event Player.LucioPrevBtn = False;
     }
 }
 
@@ -219,10 +219,10 @@ rule("Lucio: Amp It Up V5 (Stasis Overcap)")
 
     actions
     {
-        Event Player.R += 10;
-        If(Event Player.R > 110);
-            Event Player.R = 110;
+        Event Player.LucioCharge += 10;
+        If(Event Player.LucioCharge > 110);
+            Event Player.LucioCharge = 110;
         End;
-        Event Player.P = 3.000;
+        Event Player.LucioStasis = 3.000;
     }
 }
