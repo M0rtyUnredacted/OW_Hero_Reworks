@@ -44,9 +44,8 @@ rule("Init: Symmetra Overhaul & UI")
 
         Create HUD Text(Event Player, Custom String("SYMMETRA REWORK ACTIVE"), Null, Null, Left, 0, Color(Aqua), Color(White), Color(White), Visible To and String, Default Visibility);
         Create HUD Text(Event Player, Null, Null, Custom String("Turrets: Resonance (+20% Dmg, +50% Proj Spd, 15% Enemy Slow)"), Left, 1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(Event Player, Null, Null, Custom String("Primary Fire: 20% Lifesteal"), Left, 2, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(Event Player, Null, Null, Custom String("Kinetic Battery: Charged Sec hits reduce CDs by 1.5s"), Left, 3, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(Event Player, Null, Null, Custom String("Teleporter: Base CD increased to 14s"), Left, 4, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Event Player, Null, Null, Custom String("Kinetic Battery: Charged Sec hits restore turret charge & -1.5s TP CD"), Left, 2, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Event Player, Null, Null, Custom String("Teleporter: Base CD increased to 14s"), Left, 3, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
     }
 }
 
@@ -161,21 +160,6 @@ rule("System: Resonance Expiration (Symmetra Cleanse)")
     }
 }
 
-rule("Passive: Primary Fire Lifesteal")
-{
-    event
-    {
-        Player Dealt Damage;
-        All;
-        Symmetra;
-    }
-
-    actions
-    {
-        Heal(Event Player, Event Player, Event Damage * 0.200);
-    }
-}
-
 rule("Passive: Kinetic Battery (Secondary Fire CDR)")
 {
     event
@@ -192,11 +176,8 @@ rule("Passive: Kinetic Battery (Secondary Fire CDR)")
 
     actions
     {
-        Set Ability Charges(Event Player, Button(Ability 1), Min(Max Ability Charges(Event Player, Button(Ability 1)), Ability Charges(Event Player, Button(Ability 1)) + 1));
-
-        If(Ability Cooldown(Event Player, Button(Ability 2)) > 0);
-            Set Ability Cooldown(Event Player, Button(Ability 2), Max(0, Ability Cooldown(Event Player, Button(Ability 2)) - 1.500));
-        End;
+        Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+        Set Ability Cooldown(Event Player, Button(Ability 2), Max(0, Ability Cooldown(Event Player, Button(Ability 2)) - 1.500));
     }
 }
 
