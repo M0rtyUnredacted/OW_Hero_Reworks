@@ -1,19 +1,31 @@
 variables
 {
     player:
-        0: Surge_Active
-        1: Surge_CD
-        2: Surge_VFX
-        3: Ult_Matrix_Active
-        4: Aura_Buffed
-        5: Bunker_Health_Pool
-        6: Bunker_HoT
-        7: Dmg_Acc
-        8: Aura_Check
-        9: Surge_Dur
+        0: Buff_Timer
+        1: Buff_VFX_ID
+        2: Slow_Timer
+        3: Slow_Flag
+        4: Buff_HUD_ID
 }
 
-rule("Init: System Variables & Disable Turrets")
+rule("Init: Universal Physics State")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        All;
+    }
+
+    actions
+    {
+        Event Player.Slow_Timer = 0;
+        Event Player.Slow_Flag = False;
+        Chase Player Variable At Rate(Event Player, Slow_Timer, 0, 1, Destination and Rate);
+    }
+}
+
+rule("Init: Symmetra Overhaul & UI")
 {
     event
     {
@@ -24,43 +36,21 @@ rule("Init: System Variables & Disable Turrets")
 
     actions
     {
-        Set Ability 1 Enabled(Event Player, False);
-        Event Player.Surge_CD = 0;
-        Event Player.Surge_Dur = 0;
-        Event Player.Surge_Active = False;
-        Event Player.Ult_Matrix_Active = False;
-        Event Player.Dmg_Acc = 0;
-        Chase Player Variable At Rate(Event Player, Surge_CD, 0, 1, Destination and Rate);
-        Create HUD Text(Filtered Array(Array(Event Player), Event Player.Surge_Active == True), Custom String("*** SURGE: {0}s ***", Round To Integer(Event Player.Surge_Dur, Up)), Null, Null, Top, 1, Color(Yellow), Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(Filtered Array(Array(Event Player), And(Event Player.Surge_Active == False, Event Player.Surge_CD > 0)), Custom String("SURGE CD: {0}s", Round To Integer(Event Player.Surge_CD, Up)), Null, Null, Top, 1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(Filtered Array(Array(Event Player), And(Event Player.Surge_Active == False, Event Player.Surge_CD <= 0)), Custom String("SURGE: READY"), Null, Null, Top, 1, Color(Green), Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(Event Player, Custom String("COMBO: {0}/250", Round To Integer(Event Player.Dmg_Acc, Down)), Null, Null, Top, 2, Color(Green), Color(White), Color(White), Visible To and String, Default Visibility);
+        Event Player.Buff_Timer = 0;
+        Event Player.Buff_VFX_ID = 0;
+        Event Player.Buff_HUD_ID = 0;
+
+        Chase Player Variable At Rate(Event Player, Buff_Timer, 0, 1, Destination and Rate);
+
+        Create HUD Text(Event Player, Custom String("SYMMETRA REWORK ACTIVE"), Null, Null, Left, 0, Color(Aqua), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Event Player, Null, Null, Custom String("Turrets: Resonance (+20% Dmg, +50% Proj Spd, 15% Enemy Slow)"), Left, 1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Event Player, Null, Null, Custom String("Primary Fire: 20% Lifesteal"), Left, 2, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Event Player, Null, Null, Custom String("Kinetic Battery: Charged Sec hits reduce CDs by 1.5s"), Left, 3, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Event Player, Null, Null, Custom String("Teleporter: Base CD increased to 14s"), Left, 4, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
     }
 }
 
-rule("Passive: Shield Vampire (Combat CDR)")
-{
-    event
-    {
-        Player Dealt Damage;
-        All;
-        Symmetra;
-    }
-
-    actions
-    {
-        Event Player.Dmg_Acc += Event Damage;
-        If(Event Player.Dmg_Acc >= 250);
-            Event Player.Surge_CD -= 1;
-            If(Ability Cooldown(Event Player, Button(Ability 2)) > 0);
-                Set Ability Cooldown(Event Player, Button(Ability 2), Ability Cooldown(Event Player, Button(Ability 2)) - 1);
-            End;
-            Event Player.Dmg_Acc -= 250;
-        End;
-    }
-}
-
-rule("Ability 1: Surge (Self-Buff)")
+rule("Ability 2: Increase Base TP Cooldown")
 {
     event
     {
@@ -71,32 +61,17 @@ rule("Ability 1: Surge (Self-Buff)")
 
     conditions
     {
-        Is Button Held(Event Player, Button(Ability 1)) == True;
-        Event Player.Surge_CD <= 0;
-        Event Player.Ult_Matrix_Active == False;
+        Is Using Ability 2(Event Player) == True;
     }
 
     actions
     {
-        Event Player.Surge_Active = True;
-        Event Player.Surge_CD = 14;
-        Event Player.Surge_Dur = 6;
-        Chase Player Variable At Rate(Event Player, Surge_Dur, 0, 1, Destination and Rate);
-        Set Move Speed(Event Player, 130);
-        Set Damage Dealt(Event Player, 130);
-        Create Effect(All Players(All Teams), Sparkles, Color(Yellow), Event Player, 1.5, Visible To Position and Radius);
-        Event Player.Surge_VFX = Last Created Entity;
-        Wait(6, Ignore Condition);
-        If(Event Player.Ult_Matrix_Active == False);
-            Set Move Speed(Event Player, 100);
-            Set Damage Dealt(Event Player, 100);
-            Destroy Effect(Event Player.Surge_VFX);
-            Event Player.Surge_Active = False;
-        End;
+        Wait(0.100, Ignore Condition);
+        Set Ability Cooldown(Event Player, Button(Ability 2), 14);
     }
 }
 
-rule("Combat Loop: Surge Lifesteal")
+rule("Ability 1: Turret Payload (Resonance Buff & Slow)")
 {
     event
     {
@@ -107,115 +82,156 @@ rule("Combat Loop: Surge Lifesteal")
 
     conditions
     {
-        Event Player.Surge_Active == True;
+        Event Ability == Button(Ability 1);
     }
 
     actions
     {
-        Heal(Event Player, Event Player, Event Damage * 0.300);
+        If(Event Player.Buff_Timer <= 0);
+            Set Damage Dealt(Event Player, 120);
+            Set Projectile Speed(Event Player, 150);
+
+            Create Effect(All Players(All Teams), Good Aura, Color(Yellow), Event Player, 2, Visible To Position and Radius);
+            Event Player.Buff_VFX_ID = Last Created Entity;
+
+            Create HUD Text(Event Player, Custom String("RESONANCE ACTIVE"), Custom String("{0}s REMAINING", Round To Integer(Event Player.Buff_Timer, Up)), Null, Top, 1, Color(Yellow), Color(Yellow), Color(White), Visible To and String, Default Visibility);
+            Event Player.Buff_HUD_ID = Last Text ID;
+
+            Play Effect(All Players(All Teams), Good Explosion, Color(Yellow), Event Player, 2);
+        End;
+
+        Event Player.Buff_Timer = 2;
+
+        Victim.Slow_Timer = 2;
+        If(Victim.Slow_Flag == False);
+            Victim.Slow_Flag = True;
+            Set Move Speed(Victim, 85);
+        End;
     }
 }
 
-rule("Cleanup: Death Reset")
+rule("System: Resonance Expiration (Victim Cleanse)")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        All;
+    }
+
+    conditions
+    {
+        Event Player.Slow_Timer == 0;
+        Event Player.Slow_Flag == True;
+    }
+
+    actions
+    {
+        Event Player.Slow_Flag = False;
+        Set Move Speed(Event Player, 100);
+    }
+}
+
+rule("System: Resonance Expiration (Symmetra Cleanse)")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        Symmetra;
+    }
+
+    conditions
+    {
+        Event Player.Buff_Timer == 0;
+        Event Player.Buff_VFX_ID != 0;
+    }
+
+    actions
+    {
+        Set Damage Dealt(Event Player, 100);
+        Set Projectile Speed(Event Player, 100);
+
+        Destroy Effect(Event Player.Buff_VFX_ID);
+        Event Player.Buff_VFX_ID = 0;
+
+        Destroy HUD Text(Event Player.Buff_HUD_ID);
+        Event Player.Buff_HUD_ID = 0;
+    }
+}
+
+rule("Passive: Primary Fire Lifesteal")
+{
+    event
+    {
+        Player Dealt Damage;
+        All;
+        Symmetra;
+    }
+
+    conditions
+    {
+        Event Ability == Button(Primary Fire);
+    }
+
+    actions
+    {
+        Heal(Event Player, Event Player, Event Damage * 0.200);
+    }
+}
+
+rule("Passive: Kinetic Battery (Secondary Fire CDR)")
+{
+    event
+    {
+        Player Dealt Damage;
+        All;
+        Symmetra;
+    }
+
+    conditions
+    {
+        Event Ability == Button(Secondary Fire);
+        Event Damage >= 50;
+    }
+
+    actions
+    {
+        If(Ability Cooldown(Event Player, Button(Ability 1)) > 0);
+            Set Ability Cooldown(Event Player, Button(Ability 1), Max(0, Ability Cooldown(Event Player, Button(Ability 1)) - 1.500));
+        End;
+
+        If(Ability Cooldown(Event Player, Button(Ability 2)) > 0);
+            Set Ability Cooldown(Event Player, Button(Ability 2), Max(0, Ability Cooldown(Event Player, Button(Ability 2)) - 1.500));
+        End;
+    }
+}
+
+rule("System: Death Reset")
 {
     event
     {
         Player Died;
         All;
-        Symmetra;
+        All;
     }
 
     actions
     {
-        Destroy Effect(Event Player.Surge_VFX);
-        Event Player.Surge_Active = False;
-        Set Move Speed(Event Player, 100);
-        Set Damage Dealt(Event Player, 100);
-    }
-}
+        If(Hero Of(Event Player) == Hero(Symmetra));
+            Set Damage Dealt(Event Player, 100);
+            Set Projectile Speed(Event Player, 100);
+            Event Player.Buff_Timer = 0;
 
-rule("Ultimate: Siege Matrix")
-{
-    event
-    {
-        Ongoing - Each Player;
-        All;
-        Symmetra;
-    }
+            Destroy Effect(Event Player.Buff_VFX_ID);
+            Event Player.Buff_VFX_ID = 0;
 
-    conditions
-    {
-        Is Button Held(Event Player, Button(Ultimate)) == True;
-        Ultimate Charge Percent(Event Player) == 100;
-    }
-
-    actions
-    {
-        Set Ultimate Charge(Event Player, 0);
-        Event Player.Surge_CD = 0;
-        Set Ability Cooldown(Event Player, Button(Ability 2), 0);
-        Press Button(Event Player, Button(Ability 2));
-        Destroy Effect(Event Player.Surge_VFX);
-        Event Player.Ult_Matrix_Active = True;
-        Event Player.Surge_Active = True;
-        Event Player.Surge_Dur = 12;
-        Chase Player Variable At Rate(Event Player, Surge_Dur, 0, 1, Destination and Rate);
-        Set Move Speed(Event Player, 130);
-        Set Damage Dealt(Event Player, 130);
-        Create Effect(All Players(All Teams), Sparkles, Color(Aqua), Event Player, 2, Visible To Position and Radius);
-        Event Player.Surge_VFX = Last Created Entity;
-        Wait(12, Ignore Condition);
-        Event Player.Ult_Matrix_Active = False;
-        Event Player.Surge_Active = False;
-        Set Move Speed(Event Player, 100);
-        Set Damage Dealt(Event Player, 100);
-        Destroy Effect(Event Player.Surge_VFX);
-    }
-}
-
-rule("Aura: Command Aura Loop")
-{
-    event
-    {
-        Ongoing - Each Player;
-        All;
-        All;
-    }
-
-    conditions
-    {
-        Hero Of(Event Player) != Hero(Symmetra);
-    }
-
-    actions
-    {
-        Wait(0.250, Ignore Condition);
-        Event Player.Aura_Check = False;
-        If(Distance Between(Position Of(Event Player), Position Of(Value In Array(Players On Hero(Hero(Symmetra), Team Of(Event Player)), 0))) <= 15);
-            If(Value In Array(Players On Hero(Hero(Symmetra), Team Of(Event Player)), 0).Surge_Active == True);
-                Event Player.Aura_Check = True;
-            End;
-            If(Value In Array(Players On Hero(Hero(Symmetra), Team Of(Event Player)), 0).Ult_Matrix_Active == True);
-                Event Player.Aura_Check = True;
-            End;
+            Destroy HUD Text(Event Player.Buff_HUD_ID);
+            Event Player.Buff_HUD_ID = 0;
         End;
-        If(Event Player.Aura_Check == True);
-            If(Event Player.Aura_Buffed == False);
-                Event Player.Aura_Buffed = True;
-                Set Move Speed(Event Player, 115);
-                Add Health Pool To Player(Event Player, Shields, 75, True, True);
-                Event Player.Bunker_Health_Pool = Last Created Health Pool;
-                Start Heal Over Time(Event Player, Value In Array(Players On Hero(Hero(Symmetra), Team Of(Event Player)), 0), 9999, 30);
-                Event Player.Bunker_HoT = Last Heal Over Time ID;
-            End;
-        Else;
-            If(Event Player.Aura_Buffed == True);
-                Event Player.Aura_Buffed = False;
-                Set Move Speed(Event Player, 100);
-                Remove All Health Pools From Player(Event Player);
-                Stop Heal Over Time(Event Player.Bunker_HoT);
-            End;
-        End;
-        Loop;
+
+        Set Move Speed(Event Player, 100);
+        Event Player.Slow_Timer = 0;
+        Event Player.Slow_Flag = False;
     }
 }
