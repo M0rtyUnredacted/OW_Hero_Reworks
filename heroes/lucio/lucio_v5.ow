@@ -39,9 +39,7 @@ rule("Lucio: Kinetic Rhythm V5 Init & 4Hz Loop")
         Create HUD Text(
             Event Player,
             Custom String("AURA: {0}  |  HEAL%: {1}%",
-                If(Event Player.A == True,
-                    Custom String("SPEED"),
-                    Custom String("HEAL")),
+                First Of(Filtered Array(Array(Custom String("HEAL"), Custom String("SPEED")), Current Array Index == Event Player.A)),
                 Round To Integer(50 + Event Player.R, Down)),
             Null, Null,
             Top, 2,
