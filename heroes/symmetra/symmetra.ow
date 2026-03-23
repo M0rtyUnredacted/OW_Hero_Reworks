@@ -80,6 +80,12 @@ rule("Ability 1: Turret Payload (Resonance Buff & Slow)")
         Symmetra;
     }
 
+    conditions
+    {
+        Event Ability != Button(Primary Fire);
+        Event Ability != Button(Secondary Fire);
+    }
+
     actions
     {
         If(Event Player.Buff_Timer <= 0);
@@ -97,12 +103,10 @@ rule("Ability 1: Turret Payload (Resonance Buff & Slow)")
 
         Event Player.Buff_Timer = 2;
 
-        If(Event Ability == Button(Ability 1));
-            Victim.Slow_Timer = 2;
-            If(Victim.Slow_Flag == False);
-                Victim.Slow_Flag = True;
-                Set Move Speed(Victim, 85);
-            End;
+        Victim.Slow_Timer = 2;
+        If(Victim.Slow_Flag == False);
+            Victim.Slow_Flag = True;
+            Set Move Speed(Victim, 85);
         End;
     }
 }
