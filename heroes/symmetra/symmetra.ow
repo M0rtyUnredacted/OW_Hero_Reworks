@@ -10,6 +10,7 @@ variables
         6: Bunker_HoT
         7: Dmg_Acc
         8: Aura_Check
+        9: Surge_Dur
 }
 
 rule("Init: System Variables & Disable Turrets")
@@ -25,13 +26,13 @@ rule("Init: System Variables & Disable Turrets")
     {
         Set Ability 1 Enabled(Event Player, False);
         Event Player.Surge_CD = 0;
+        Event Player.Surge_Dur = 0;
         Event Player.Surge_Active = False;
         Event Player.Ult_Matrix_Active = False;
         Event Player.Dmg_Acc = 0;
         Chase Player Variable At Rate(Event Player, Surge_CD, 0, 1, Destination and Rate);
-        Create HUD Text(Event Player, Custom String("*** SURGE ACTIVE ***", Null, Null, Null), Null, Null, Top, 1, Color(Yellow), Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(Event Player, Custom String("SURGE CD: {0}s", Round To Integer(Event Player.Surge_CD, Up)), Null, Null, Top, 2, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(Event Player, Custom String("COMBO: {0}/250", Round To Integer(Event Player.Dmg_Acc, Down)), Null, Null, Top, 3, Color(Green), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Event Player, If(Event Player.Surge_Active == True, Custom String("*** SURGE ACTIVE: {0}s ***", Round To Integer(Event Player.Surge_Dur, Up)), If(Event Player.Surge_CD <= 0, Custom String("SURGE: READY"), Custom String("SURGE CD: {0}s", Round To Integer(Event Player.Surge_CD, Up)))), Null, Null, Top, 1, Color(Yellow), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Event Player, Custom String("COMBO: {0}/250", Round To Integer(Event Player.Dmg_Acc, Down)), Null, Null, Top, 2, Color(Green), Color(White), Color(White), Visible To and String, Default Visibility);
     }
 }
 
@@ -77,6 +78,8 @@ rule("Ability 1: Surge (Self-Buff)")
     {
         Event Player.Surge_Active = True;
         Event Player.Surge_CD = 14;
+        Event Player.Surge_Dur = 6;
+        Chase Player Variable At Rate(Event Player, Surge_Dur, 0, 1, Destination and Rate);
         Set Move Speed(Event Player, 130);
         Set Damage Dealt(Event Player, 130);
         Create Effect(All Players(All Teams), Sparkles, Color(Yellow), Event Player, 1.5, Visible To Position and Radius);
@@ -153,6 +156,8 @@ rule("Ultimate: Siege Matrix")
         Destroy Effect(Event Player.Surge_VFX);
         Event Player.Ult_Matrix_Active = True;
         Event Player.Surge_Active = True;
+        Event Player.Surge_Dur = 12;
+        Chase Player Variable At Rate(Event Player, Surge_Dur, 0, 1, Destination and Rate);
         Set Move Speed(Event Player, 130);
         Set Damage Dealt(Event Player, 130);
         Create Effect(All Players(All Teams), Sparkles, Color(Aqua), Event Player, 2, Visible To Position and Radius);
