@@ -81,8 +81,7 @@ rule("Ability 1: Turret Payload (Resonance Buff & Slow)")
 
     conditions
     {
-        Event Ability != Button(Primary Fire);
-        Event Ability != Button(Secondary Fire);
+        Event Ability == Button(Ability 1);
     }
 
     actions
@@ -143,7 +142,7 @@ rule("System: Resonance Expiration (Symmetra Cleanse)")
 
     conditions
     {
-        Event Player.Buff_Timer == 0;
+        Event Player.Buff_Timer <= 0;
         Event Player.Buff_VFX_ID != 0;
     }
 
@@ -171,7 +170,7 @@ rule("Passive: Kinetic Battery (Secondary Fire CDR)")
 
     conditions
     {
-        Event Damage >= 50;
+        Event Ability == Button(Secondary Fire);
     }
 
     actions
