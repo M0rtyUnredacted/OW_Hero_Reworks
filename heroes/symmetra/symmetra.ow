@@ -192,9 +192,7 @@ rule("Passive: Kinetic Battery (Secondary Fire CDR)")
 
     actions
     {
-        If(Ability Cooldown(Event Player, Button(Ability 1)) > 0);
-            Set Ability Cooldown(Event Player, Button(Ability 1), Max(0, Ability Cooldown(Event Player, Button(Ability 1)) - 1.500));
-        End;
+        Set Ability Charges(Event Player, Button(Ability 1), Min(Max Ability Charges(Event Player, Button(Ability 1)), Ability Charges(Event Player, Button(Ability 1)) + 1));
 
         If(Ability Cooldown(Event Player, Button(Ability 2)) > 0);
             Set Ability Cooldown(Event Player, Button(Ability 2), Max(0, Ability Cooldown(Event Player, Button(Ability 2)) - 1.500));
