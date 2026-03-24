@@ -60,7 +60,8 @@ rule("Ability 1: Turret Payload (Resonance Buff Activate)")
 
     conditions
     {
-        Event Ability == Button(Ability 1);
+        Event Ability != Button(Primary Fire);
+        Event Ability != Button(Secondary Fire);
     }
 
     actions
