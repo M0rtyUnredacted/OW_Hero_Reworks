@@ -65,24 +65,33 @@ rule("Ability 1: Turret Payload (Resonance Buff Activate)")
     actions
     {
         If(Event Player.Buff_Timer <= 0);
+            // Set timer FIRST - prevents expiration rule race condition where
+            // Buff_VFX_ID going non-zero while Buff_Timer is still 0 would
+            // immediately trigger the expiration rule and destroy the effect
+            Event Player.Buff_Timer = 4;
+
             Set Damage Dealt(Event Player, 120);
             Set Projectile Speed(Event Player, 150);
 
-            Create Effect(Event Player, Good Aura, Color(Sky Blue), Event Player, 2, Visible To Position and Radius);
+            // Sphere centered on the player is visible from first-person (you are inside it)
+            Create Effect(All Players(All Teams), Sphere, Color(Aqua), Event Player, 1.5, Visible To Position and Radius);
             Event Player.Buff_VFX_ID = Last Created Entity;
 
-            Create HUD Text(Event Player, Custom String("RESONANCE ACTIVE"), Custom String("{0}s", Round To Integer(Event Player.Buff_Timer, Up)), Null, Top, 1, Color(Sky Blue), Color(Sky Blue), Color(White), Visible To and String, Default Visibility);
+            Create HUD Text(Event Player, Custom String("RESONANCE ACTIVE"), Custom String("{0}s", Round To Integer(Event Player.Buff_Timer, Up)), Null, Top, 1, Color(Aqua), Color(Aqua), Color(White), Visible To and String, Default Visibility);
             Event Player.Buff_HUD_ID = Last Text ID;
 
-            Play Effect(All Players(All Teams), Ring Explosion, Color(Sky Blue), Event Player, 2);
+            Play Effect(All Players(All Teams), Good Explosion, Color(Aqua), Event Player, 2);
         End;
 
+        // Refresh timer on re-activation while buff is already running
         Event Player.Buff_Timer = 4;
     }
 }
 
 rule("Ability 1: Turret Fast Recharge")
 {
+    // Each turret placement triggers this independently - each gets its own
+    // 8s wait then adds one charge back (vs native ~10s = ~20% faster)
     event
     {
         Ongoing - Each Player;
@@ -92,14 +101,13 @@ rule("Ability 1: Turret Fast Recharge")
 
     conditions
     {
-        Ability Charge(Event Player, Button(Ability 1)) < 3;
+        Is Using Ability 1(Event Player) == True;
     }
 
     actions
     {
-        Wait(8, Abort When False);
+        Wait(8, Ignore Condition);
         Set Ability Charge(Event Player, Button(Ability 1), Min(3, Ability Charge(Event Player, Button(Ability 1)) + 1));
-        Loop If Condition Is True;
     }
 }
 
