@@ -44,29 +44,7 @@ rule("Init: Symmetra Overhaul & UI")
 
         Create HUD Text(Event Player, Custom String("SYMMETRA REWORK ACTIVE"), Null, Null, Left, 0, Color(Aqua), Color(White), Color(White), Visible To and String, Default Visibility);
         Create HUD Text(Event Player, Null, Null, Custom String("Turrets: Resonance (+20% Dmg, +50% Proj Spd, 15% Slow on hit)"), Left, 1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(Event Player, Null, Null, Custom String("Kinetic Battery: Sec fire hits restore turret charge & -1.5s TP CD"), Left, 2, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(Event Player, Null, Null, Custom String("Teleporter: Base CD increased to 14s"), Left, 3, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-    }
-}
-
-rule("Ability 2: Increase Base TP Cooldown")
-{
-    event
-    {
-        Ongoing - Each Player;
-        All;
-        Symmetra;
-    }
-
-    conditions
-    {
-        Is Using Ability 2(Event Player) == True;
-    }
-
-    actions
-    {
-        Wait(0.100, Ignore Condition);
-        Set Ability Cooldown(Event Player, Button(Ability 2), 14);
+        Create HUD Text(Event Player, Null, Null, Custom String("Turrets: Charges recharge 20% faster"), Left, 2, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
     }
 }
 
@@ -90,17 +68,38 @@ rule("Ability 1: Turret Payload (Resonance Buff Activate)")
             Set Damage Dealt(Event Player, 120);
             Set Projectile Speed(Event Player, 150);
 
-            Create Effect(All Players(All Teams), Good Aura, Color(Yellow), Event Player, 1, Visible To Position and Radius);
+            Create Effect(Event Player, Good Aura, Color(Sky Blue), Event Player, 2, Visible To Position and Radius);
             Event Player.Buff_VFX_ID = Last Created Entity;
 
-            Create HUD Text(Event Player, Custom String("RESONANCE ACTIVE"), Custom String("{0}s", Round To Integer(Event Player.Buff_Timer, Up)), Null, Top, 1, Color(Yellow), Color(Yellow), Color(White), Visible To and String, Default Visibility);
+            Create HUD Text(Event Player, Custom String("RESONANCE ACTIVE"), Custom String("{0}s", Round To Integer(Event Player.Buff_Timer, Up)), Null, Top, 1, Color(Sky Blue), Color(Sky Blue), Color(White), Visible To and String, Default Visibility);
             Event Player.Buff_HUD_ID = Last Text ID;
 
-            Play Effect(All Players(All Teams), Good Explosion, Color(Yellow), Event Player, 2);
-            Small Message(Event Player, Custom String("RESONANCE ACTIVATED"));
+            Play Effect(All Players(All Teams), Ring Explosion, Color(Sky Blue), Event Player, 2);
         End;
 
         Event Player.Buff_Timer = 4;
+    }
+}
+
+rule("Ability 1: Turret Fast Recharge")
+{
+    event
+    {
+        Ongoing - Each Player;
+        All;
+        Symmetra;
+    }
+
+    conditions
+    {
+        Ability Charge(Event Player, Button(Ability 1)) < 3;
+    }
+
+    actions
+    {
+        Wait(8, Abort When False);
+        Set Ability Charge(Event Player, Button(Ability 1), Min(3, Ability Charge(Event Player, Button(Ability 1)) + 1));
+        Loop If Condition Is True;
     }
 }
 
@@ -175,28 +174,6 @@ rule("System: Resonance Expiration (Symmetra Cleanse)")
 
         Destroy HUD Text(Event Player.Buff_HUD_ID);
         Event Player.Buff_HUD_ID = 0;
-    }
-}
-
-rule("Passive: Kinetic Battery (Secondary Fire CDR)")
-{
-    event
-    {
-        Player Dealt Damage;
-        All;
-        Symmetra;
-    }
-
-    conditions
-    {
-        Event Damage >= 50;
-    }
-
-    actions
-    {
-        Set Ability Charge(Event Player, Button(Ability 1), Min(3, Ability Charge(Event Player, Button(Ability 1)) + 1));
-        Set Ability Cooldown(Event Player, Button(Ability 2), Max(0, Ability Cooldown(Event Player, Button(Ability 2)) - 1.500));
-        Small Message(Event Player, Custom String("KINETIC BATTERY"));
     }
 }
 
