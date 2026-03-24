@@ -50,16 +50,17 @@ rule("Init: Symmetra Overhaul & UI")
 
 rule("Ability 1: Turret Payload (Resonance Buff Activate)")
 {
+    // Fires on turret damage - Event Ability returns Button(Ability 1) for sentry turret hits
     event
     {
-        Ongoing - Each Player;
+        Player Dealt Damage;
         All;
         Symmetra;
     }
 
     conditions
     {
-        Is Using Ability 1(Event Player) == True;
+        Event Ability == Button(Ability 1);
     }
 
     actions
@@ -68,7 +69,7 @@ rule("Ability 1: Turret Payload (Resonance Buff Activate)")
             // Set timer FIRST - prevents expiration rule race condition where
             // Buff_VFX_ID going non-zero while Buff_Timer is still 0 would
             // immediately trigger the expiration rule and destroy the effect
-            Event Player.Buff_Timer = 4;
+            Event Player.Buff_Timer = 2;
 
             Set Damage Dealt(Event Player, 120);
             Set Projectile Speed(Event Player, 150);
@@ -83,8 +84,8 @@ rule("Ability 1: Turret Payload (Resonance Buff Activate)")
             Play Effect(All Players(All Teams), Good Explosion, Color(Aqua), Event Player, 2);
         End;
 
-        // Refresh timer on re-activation while buff is already running
-        Event Player.Buff_Timer = 4;
+        // Rolling 2s window - each turret hit resets the timer
+        Event Player.Buff_Timer = 2;
     }
 }
 
