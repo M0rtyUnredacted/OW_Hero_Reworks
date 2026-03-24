@@ -44,7 +44,7 @@ rule("Init: Symmetra Overhaul & UI")
 
         Create HUD Text(Event Player, Custom String("SYMMETRA REWORK ACTIVE"), Null, Null, Left, 0, Color(Aqua), Color(White), Color(White), Visible To and String, Default Visibility);
         Create HUD Text(Event Player, Null, Null, Custom String("Turrets: Resonance (+20% Dmg, +50% Proj Spd, 15% Enemy Slow)"), Left, 1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
-        Create HUD Text(Event Player, Null, Null, Custom String("Kinetic Battery: Charged Sec hits restore turret charge & -1.5s TP CD"), Left, 2, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+        Create HUD Text(Event Player, Null, Null, Custom String("Kinetic Battery: Sec fire hits -1.5s all CDs"), Left, 2, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
         Create HUD Text(Event Player, Null, Null, Custom String("Teleporter: Base CD increased to 14s"), Left, 3, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
     }
 }
@@ -81,7 +81,10 @@ rule("Ability 1: Turret Payload (Resonance Buff & Slow)")
 
     conditions
     {
-        Event Ability == Button(Ability 1);
+        Event Damage < 50;
+        Event Ability != Button(Primary Fire);
+        Event Ability != Button(Secondary Fire);
+        Event Ability != Button(Melee);
     }
 
     actions
@@ -97,6 +100,7 @@ rule("Ability 1: Turret Payload (Resonance Buff & Slow)")
             Event Player.Buff_HUD_ID = Last Text ID;
 
             Play Effect(All Players(All Teams), Good Explosion, Color(Yellow), Event Player, 2);
+            Small Message(Event Player, Custom String("RESONANCE ACTIVATED"));
         End;
 
         Event Player.Buff_Timer = 2;
@@ -170,13 +174,14 @@ rule("Passive: Kinetic Battery (Secondary Fire CDR)")
 
     conditions
     {
-        Event Ability == Button(Secondary Fire);
+        Event Damage >= 50;
     }
 
     actions
     {
-        Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+        Set Ability Cooldown(Event Player, Button(Ability 1), Max(0, Ability Cooldown(Event Player, Button(Ability 1)) - 1.500));
         Set Ability Cooldown(Event Player, Button(Ability 2), Max(0, Ability Cooldown(Event Player, Button(Ability 2)) - 1.500));
+        Small Message(Event Player, Custom String("KINETIC BATTERY"));
     }
 }
 
