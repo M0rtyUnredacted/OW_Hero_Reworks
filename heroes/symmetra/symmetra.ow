@@ -62,6 +62,7 @@ rule("Ability 1: Turret Payload (Resonance Buff Activate)")
     {
         Event Ability != Button(Primary Fire);
         Event Ability != Button(Secondary Fire);
+        Event Damage > 0;
     }
 
     actions
@@ -76,7 +77,7 @@ rule("Ability 1: Turret Payload (Resonance Buff Activate)")
             Set Projectile Speed(Event Player, 150);
 
             // Good Aura raised to waist height - visible when glancing down in FPS, less intrusive than a sphere
-            Create Effect(All Players(All Teams), Good Aura, Color(Aqua), Add(Position Of(Event Player), Vector(0, 0.9, 0)), 1.0, Visible To Position and Radius);
+            Create Effect(All Players(All Teams), Sparkles, Color(Aqua), Add(Position Of(Event Player), Vector(0, 0.9, 0)), 1.0, Visible To Position and Radius);
             Event Player.Buff_VFX_ID = Last Created Entity;
 
             Create HUD Text(Event Player, Custom String("RESONANCE ACTIVE"), Custom String("{0}s", Round To Integer(Event Player.Buff_Timer, Up)), Null, Top, 1, Color(Aqua), Color(Aqua), Color(White), Visible To and String, Default Visibility);
