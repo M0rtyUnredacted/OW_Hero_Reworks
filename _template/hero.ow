@@ -1,311 +1,215 @@
-# ============================================================
-# HERO: [Hero Name]
-# REWORK VERSION: v1.0
-# LAST UPDATED: [YYYY-MM-DD]
-# DESCRIPTION: [One sentence summary of what this rework does]
-# ============================================================
-#
-# HOW TO USE:
-#   Copy the entire contents of this file, open the Overwatch
-#   Workshop Editor, click Import, and paste. Then save and
-#   start your custom game.
-#
-# ============================================================
-
-
-# === SETTINGS ===
-# Configures the game mode, hero availability, and lobby rules.
-# Adjust these to match the intended test environment.
+// ============================================================
+// HERO: Ana   (REPLACE every "Ana" / Hero(Ana) with the reworked hero)
+// REWORK VERSION: v1.0
+// LAST UPDATED: YYYY-MM-DD
+// DESCRIPTION: One sentence summary of what this rework does.
+// ============================================================
+// HOW TO USE: copy this whole file, open Workshop > Settings >
+// Workshop editor, click the paste/import icon, then start the game.
+//
+// SYNTAX RULES (the in-game importer is strict):
+//   - Top-level comments use '//' (like these lines).
+//   - Comments inside a rule are quoted strings placed directly
+//     before an action or condition: "explains the next line"
+//   - Never use '#' comments.
+//   - Run `node tools/validate.js` before committing.
+// ============================================================
 
 settings
 {
-    main
-    {
-        Description: "[Hero Name] Rework - v1.0"
-        Mode Name: "[Hero Name] Rework"
-    }
+	main
+	{
+		Description: "Ana Rework v1.0 - one line pitch. Source: github.com/M0rtyUnredacted/OW_Hero_Reworks"
+		Mode Name: "Ana Rework"
+	}
 
-    modes
-    {
-        # Replace with the desired game mode, e.g. Skirmish, Deathmatch
-        Skirmish
-        {
-            enabled maps
-            {
-                Skirmish
-            }
-        }
-    }
+	lobby
+	{
+		Max Team 1 Players: 5
+		Max Team 2 Players: 5
+	}
 
-    heroes
-    {
-        Team 1
-        {
-            # Restrict to the reworked hero so testers use the right character
-            # Example: disabled heroes { ... }
-        }
-    }
+	modes
+	{
+		Skirmish
+		{
+		}
+
+		General
+		{
+			Game Mode Start: Immediately
+			Hero Limit: Off
+			Respawn Time Scalar: 30%
+		}
+	}
+
+	heroes
+	{
+		General
+		{
+			Ana
+			{
+				Healing Dealt: 100%
+			}
+		}
+	}
 }
-
-
-# === GLOBAL VARIABLES ===
-# Variables shared across the entire match (not tied to a specific player).
-# Use PascalCase names. Assign all numeric constants here with a comment
-# explaining the value — never use bare numbers in rules below.
 
 variables
 {
-    global:
-        # Example:
-        # 0: ReworkVersion              # Used in HUD display
-        # 1: SomeConstant               # Description of what this number means
+	global:
+		0: BuffDuration
+		1: BuffDamagePercent
+
+	player:
+		0: BuffActive
+		1: BuffEffect
+		2: HudTexts
+		3: LoopIndex
 }
-
-
-# === PLAYER VARIABLES ===
-# Variables tied to individual players (cooldowns, counters, state flags).
-# Use PascalCase names.
-
-variables
-{
-    player:
-        # Example:
-        # 0: AbilityCharge              # Current charges for the modified ability
-        # 1: IsAbilityActive            # True while the ability is in use
-}
-
-
-# === SUBROUTINES ===
-# Named action blocks that can be called from multiple rules.
-# Add one entry per subroutine, then define the matching rule below.
 
 subroutines
 {
-    # Example:
-    # 0: ResetAbilityState
+	0: ResetReworkState
 }
 
+// ============================================================
+// SETUP
+// ============================================================
 
-# ============================================================
-# === INITIALIZATION ===
-# Runs once when the match starts.
-# Sets all global and player variable defaults.
-# ============================================================
-
-rule("Init - [Hero Name] Rework")
+rule("Setup: Lobby Tunables")
 {
-    event
-    {
-        Ongoing - Global;
-    }
+	event
+	{
+		Ongoing - Global;
+	}
 
-    actions
-    {
-        # Set global constants
-        # Global Variable(ReworkVersion) = 1.0;
-
-        # Set player variable defaults for all players
-        # For All Players(All Teams) Do:
-        #   Set Player Variable([Hero Name] player, AbilityCharge, 0);
-    }
+	actions
+	{
+		"Tunables live in Settings > Workshop so testers can rebalance without editing code."
+		Global.BuffDuration = Workshop Setting Real(Custom String("Ana Rework"), Custom String("Buff duration (seconds)"), 3, 0.5, 10, 0);
+		Global.BuffDamagePercent = Workshop Setting Integer(Custom String("Ana Rework"), Custom String("Buff damage dealt (%)"), 120, 100, 300, 1);
+		Disable Inspector Recording;
+	}
 }
 
-
-# ============================================================
-# === ABILITY: [ABILITY NAME] ===
-# Describe what this ability does in the rework (plain English).
-# Add as many rules as needed — one per distinct trigger or effect.
-# Rule naming format: "[Ability] - [What this rule does]"
-# ============================================================
-
-rule("[Ability Name] - Detect Activation")
+rule("Setup: Hero HUD (runs each time a player becomes the hero)")
 {
-    event
-    {
-        Ongoing - Each Player;
-        All;
-        All;
-    }
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
 
-    conditions
-    {
-        # Condition that detects the ability being used
-        # Example: Is Button Held(Event Player, Button(Ability 1)) == True;
-    }
-
-    actions
-    {
-        # Actions to perform when the ability fires
-    }
+	actions
+	{
+		Call Subroutine(ResetReworkState);
+		Create HUD Text(Event Player, Null, Null, Custom String("Ana Rework v1.0 - one line summary of the changes"), Left, 0, Color(White), Color(White), Color(Aqua), Visible To and String, Default Visibility);
+		Modify Player Variable(Event Player, HudTexts, Append To Array, Last Text ID);
+		Create HUD Text(Event Player, Null, Null, Custom String("Ability 2: grants a short damage buff"), Left, 1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+		Modify Player Variable(Event Player, HudTexts, Append To Array, Last Text ID);
+	}
 }
 
-rule("[Ability Name] - Apply Effect")
+// ============================================================
+// ABILITY 2 - example: timed self-buff on cast
+// Pattern: edge-triggered condition + Wait, no chased timers in conditions.
+// ============================================================
+
+rule("Ability 2: Buff On Cast")
 {
-    event
-    {
-        Ongoing - Each Player;
-        All;
-        All;
-    }
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Ana;
+	}
 
-    conditions
-    {
-        # Condition(s) that trigger the effect
-    }
+	conditions
+	{
+		Is Using Ability 2(Event Player) == True;
+	}
 
-    actions
-    {
-        # The actual gameplay effect (damage, movement, healing, etc.)
-    }
+	actions
+	{
+		Event Player.BuffActive = True;
+		Set Damage Dealt(Event Player, Global.BuffDamagePercent);
+		Create Effect(All Players(All Teams), Good Aura, Color(Aqua), Event Player, 0.750, Visible To Position and Radius);
+		Event Player.BuffEffect = Last Created Entity;
+		Wait(Global.BuffDuration, Ignore Condition);
+		"Only clear if nothing else (death, hero swap) already did."
+		If(Event Player.BuffActive);
+			Event Player.BuffActive = False;
+			Set Damage Dealt(Event Player, 100);
+			Destroy Effect(Event Player.BuffEffect);
+		End;
+	}
 }
 
-rule("[Ability Name] - Reset on Death")
+// ============================================================
+// LIFECYCLE / CLEANUP
+// ============================================================
+
+rule("Lifecycle: Reset On Death")
 {
-    event
-    {
-        Player Died;
-        All;
-        All;
-    }
+	event
+	{
+		Player Died;
+		All;
+		Ana;
+	}
 
-    actions
-    {
-        # Clean up any active effects and reset variables when the player dies
-    }
+	actions
+	{
+		Event Player.BuffActive = False;
+		Set Damage Dealt(Event Player, 100);
+		Destroy Effect(Event Player.BuffEffect);
+	}
 }
 
-
-# ============================================================
-# === ABILITY: [SECOND ABILITY NAME] ===
-# Add additional ability sections here, one per modified ability.
-# ============================================================
-
-# (Copy the ability block above and fill in for each additional ability)
-
-
-# ============================================================
-# === PASSIVE ===
-# Rules for any passive modifications.
-# Remove this section if the passive is unchanged.
-# ============================================================
-
-rule("Passive - [Description]")
+rule("Lifecycle: Clean Up After Swapping Off The Hero")
 {
-    event
-    {
-        Ongoing - Each Player;
-        All;
-        All;
-    }
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
 
-    conditions
-    {
-        # Condition(s) that trigger the passive effect
-    }
+	conditions
+	{
+		Hero Of(Event Player) != Hero(Ana);
+		Count Of(Event Player.HudTexts) > 0;
+	}
 
-    actions
-    {
-        # Passive effect logic
-    }
+	actions
+	{
+		Call Subroutine(ResetReworkState);
+	}
 }
 
-
-# ============================================================
-# === ULTIMATE ===
-# Rules for ultimate ability modifications.
-# Remove this section if the ultimate is unchanged.
-# ============================================================
-
-rule("Ultimate - Detect Activation")
+rule("Sub: Reset Rework State")
 {
-    event
-    {
-        Ongoing - Each Player;
-        All;
-        All;
-    }
+	event
+	{
+		Subroutine;
+		ResetReworkState;
+	}
 
-    conditions
-    {
-        # Example: Is Using Ultimate(Event Player) == True;
-    }
-
-    actions
-    {
-        # Custom ultimate logic
-    }
+	actions
+	{
+		"Destroy every HUD text this player owns, then reset modifiers to baseline."
+		For Player Variable(Event Player, LoopIndex, 0, Count Of(Event Player.HudTexts), 1);
+			Destroy HUD Text(Event Player.HudTexts[Event Player.LoopIndex]);
+		End;
+		Event Player.HudTexts = Empty Array;
+		Event Player.BuffActive = False;
+		Destroy Effect(Event Player.BuffEffect);
+		Set Damage Dealt(Event Player, 100);
+	}
 }
 
-
-# ============================================================
-# === UTILITY ===
-# Miscellaneous rules that support multiple abilities.
-# Examples: respawn cleanup, cross-ability interactions,
-# variable resets that apply globally.
-# ============================================================
-
-rule("Utility - On Respawn Cleanup")
-{
-    event
-    {
-        Player Joined Match;
-        All;
-        All;
-    }
-
-    actions
-    {
-        # Reset all player variables to defaults on respawn/rejoin
-    }
-}
-
-
-# ============================================================
-# === HUD / VISUAL FEEDBACK ===
-# Rules that display on-screen text or create visual indicators.
-# Kept separate so this block can be removed without affecting
-# any gameplay logic above.
-# ============================================================
-
-rule("HUD - Display Rework Info")
-{
-    event
-    {
-        Ongoing - Global;
-    }
-
-    actions
-    {
-        # Example: display the rework name and version in the top-left corner
-        # Create HUD Text(All Players(All Teams), Null, Null,
-        #   String("{0} Rework v{1}", [Hero Name], Global Variable(ReworkVersion)),
-        #   Top, 0, Color(White), Color(White), Color(White),
-        #   Visible To and String, Default Visibility);
-    }
-}
-
-rule("HUD - [Ability Name] Charge Display")
-{
-    event
-    {
-        Ongoing - Each Player;
-        All;
-        All;
-    }
-
-    conditions
-    {
-        # Only show for the relevant hero
-        # Example: Hero Of(Event Player) == Hero([Hero Name]);
-    }
-
-    actions
-    {
-        # Display ability-specific info (charges, cooldown state, etc.)
-    }
-}
-
-
-# ============================================================
-# END OF SCRIPT — [Hero Name] Rework v1.0
-# ============================================================
+// ============================================================
+// END OF SCRIPT - Ana Rework v1.0
+// ============================================================
