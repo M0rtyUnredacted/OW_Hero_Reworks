@@ -61,12 +61,23 @@ const LINTS = [
     },
 ];
 
+// Errors that already broke an in-game paste and that OverPy can't catch.
+// Each entry links to its write-up in docs/ERROR_LOG.md. Add one per fix.
+const KNOWN_ERRORS = JSON.parse(fs.readFileSync(path.join(__dirname, "known-errors.json"), "utf8")).map((e) => ({
+    id: e.id,
+    re: new RegExp(e.pattern, e.flags || ""),
+    msg: e.message,
+}));
+
 function lintRaw(src) {
     const issues = [];
     let inString = false;
     src.split(/\r?\n/).forEach((line, i) => {
         for (const l of LINTS) {
             if (l.test(line)) issues.push({ line: i + 1, id: l.id, msg: l.msg, text: line.trim() });
+        }
+        for (const k of KNOWN_ERRORS) {
+            if (k.re.test(line)) issues.push({ line: i + 1, id: k.id, msg: k.msg, text: line.trim(), error: true });
         }
         // Custom String literals are capped at 128 characters in-game.
         for (const m of line.matchAll(/Custom String\("((?:[^"\\]|\\.)*)"/g)) {
@@ -158,10 +169,11 @@ function silence(fn) {
             byId.get(issue.id).push(issue);
         }
         for (const [id, hits] of byId) {
-            lines.push(`  warn  [${id}] ${hits[0].msg} (${hits.length} hit(s))`);
+            lines.push(`  ${hits[0].error ? "ERROR" : "warn "} [${id}] ${hits[0].msg} (${hits.length} hit(s))`);
             for (const h of hits.slice(0, 3)) lines.push(`        > line ${h.line}: ${h.text}`);
             if (hits.length > 3) lines.push(`        > ... and ${hits.length - 3} more`);
-            fileWarnings += hits.length;
+            if (hits[0].error) fileErrors += hits.length;
+            else fileWarnings += hits.length;
         }
 
         let opy = null;

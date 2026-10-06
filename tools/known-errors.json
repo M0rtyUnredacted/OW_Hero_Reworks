@@ -1,0 +1,7 @@
+[
+    {
+        "id": "E001-expanse-night",
+        "pattern": "^\\s*Workshop Expanse Night\\s*$",
+        "message": "The in-game importer rejects 'Workshop Expanse Night' in a map list (\"Expected a map name after 'Expanse'\"). Use 'Workshop Expanse'. See docs/ERROR_LOG.md#e001"
+    }
+]
