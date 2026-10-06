@@ -26,6 +26,14 @@ A collection of custom hero reworks built in the Overwatch Workshop. Each rework
 
 ---
 
+## Game Modes
+
+| Mode | Version | Script | Last Updated |
+|---|---|---|---|
+| [Hanzo Aim Gauntlet](modes/hanzo-aim-gauntlet/) | v1.0 | [v1.0](modes/hanzo-aim-gauntlet/hanzo-aim-gauntlet.ow) | 2026-10-06 |
+
+---
+
 ## Tooling (for the technical director)
 
 | Command | What it does |
@@ -61,6 +69,7 @@ OW_Hero_Reworks/
 │   ├── WORKSHOP_GUIDE.md  ← Engine semantics, bugs, patterns, polish checklist
 │   └── api/               ← Generated exact-name reference (do not hand-edit)
 ├── tools/                 ← setup.sh, validate.js, gen-api-docs.js
+├── modes/                 ← Standalone custom game modes (same file layout as heroes/)
 ├── _template/             ← Copy this to start a new hero
 │   ├── hero.ow
 │   ├── design-doc.md

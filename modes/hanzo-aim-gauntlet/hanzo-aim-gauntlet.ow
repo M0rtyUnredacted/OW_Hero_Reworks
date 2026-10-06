@@ -1,0 +1,713 @@
+// ============================================================
+// MODE: Hanzo Aim Gauntlet
+// VERSION: v1.0
+// LAST UPDATED: 2026-10-06
+// DESCRIPTION: Survival aim trainer for Hanzo. Strafing, jumping
+// bots shoot back; every wave adds bots, tightens their aim and
+// speeds up their movement. Die and the run ends.
+// ============================================================
+// HOW TO USE: copy this whole file, open Workshop > Settings >
+// Workshop editor, paste, then start. Tune everything under
+// Settings > Workshop > "Hanzo Aim Gauntlet".
+//
+// CORE LOOP
+//   - Kill bots to fill the wave bar. A full bar = next wave.
+//   - Bots aim where you WERE (aim lag) with random spread, so
+//     strafing and Lunge are your defence. Both shrink each wave.
+//   - No passive regen. Kills heal you; headshot kills heal more.
+//   - Accuracy counts charged/tapped arrows only (Storm Arrows
+//     are excluded from accuracy but still kill).
+// ============================================================
+
+settings
+{
+	main
+	{
+		Description: "Hanzo Aim Gauntlet v1.0 - survival aim trainer. Bots strafe, jump and shoot back; each wave they aim better. Source: github.com/M0rtyUnredacted/OW_Hero_Reworks"
+		Mode Name: "Hanzo Aim Gauntlet"
+	}
+
+	lobby
+	{
+		Max Team 1 Players: 1
+		Max Team 2 Players: 6
+		Max Spectators: 4
+		Return To Lobby: Never
+	}
+
+	modes
+	{
+		Skirmish
+		{
+			enabled maps
+			{
+				Workshop Expanse
+				Workshop Expanse Night
+			}
+		}
+
+		General
+		{
+			Game Mode Start: Immediately
+			Hero Limit: Off
+			Kill Cam: Off
+			Respawn Time Scalar: 0%
+		}
+	}
+
+	heroes
+	{
+		Team 1
+		{
+			Hanzo
+			{
+				Passive Health Regeneration: Off
+				Ultimate Ability Dragonstrike: Off
+			}
+
+			enabled heroes
+			{
+				Hanzo
+			}
+		}
+
+		Team 2
+		{
+			Health: 80%
+			Passive Health Regeneration: Off
+			Ultimate Ability: Off
+		}
+	}
+}
+
+variables
+{
+	global:
+		0: Trainee
+		1: RunActive
+		2: RunEnding
+		3: Wave
+		4: WaveStep
+		5: Score
+		6: KillsThisWave
+		7: Kills
+		8: HeadshotKills
+		9: Shots
+		10: Hits
+		11: HeadshotHits
+		12: HeadshotStreak
+		13: BestHeadshotStreak
+		14: BestWave
+		15: BestScore
+		16: ActiveBots
+		17: HeroPool
+		18: BotDamage
+		19: BotSpread
+		20: BotAimLag
+		21: BotPauseMin
+		22: BotPauseMax
+		23: BotBurstMax
+		24: StrafeMin
+		25: StrafeMax
+		26: JumpChance
+		27: SpawnArc
+		28: SlotIndex
+		29: SpawnPoint
+		30: SpawnTry
+		31: SetStartWave
+		32: SetKillsPerWave
+		33: SetMaxBots
+		34: SetDamageBase
+		35: SetDamageStep
+		36: SetSpreadMult
+		37: SetStrafeSpeed
+		38: SetHealOnKill
+		39: SetMinRange
+		40: SetMaxRange
+		41: SetHanzoBots
+		42: SetWidowBots
+		43: SetTracerBots
+		44: SetBotRespawnDelay
+
+	player:
+		0: StrafeDir
+		1: RangeDir
+		2: AimOffset
+		3: IsDrawing
+}
+
+subroutines
+{
+	0: ApplyWaveDifficulty
+	1: PickSpawnPoint
+}
+
+// ============================================================
+// SETUP
+// ============================================================
+
+rule("Setup: Lobby Tunables")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Global.SetStartWave = Workshop Setting Integer(Custom String("Hanzo Aim Gauntlet"), Custom String("Starting wave"), 1, 1, 20, 0);
+		Global.SetKillsPerWave = Workshop Setting Integer(Custom String("Hanzo Aim Gauntlet"), Custom String("Kills needed per wave"), 5, 2, 20, 1);
+		Global.SetMaxBots = Workshop Setting Integer(Custom String("Hanzo Aim Gauntlet"), Custom String("Max bots alive at once"), 4, 1, 6, 2);
+		Global.SetDamageBase = Workshop Setting Integer(Custom String("Hanzo Aim Gauntlet"), Custom String("Bot damage % at wave 1"), 35, 0, 300, 3);
+		Global.SetDamageStep = Workshop Setting Integer(Custom String("Hanzo Aim Gauntlet"), Custom String("Bot damage % added per wave"), 6, 0, 50, 4);
+		Global.SetSpreadMult = Workshop Setting Real(Custom String("Hanzo Aim Gauntlet"), Custom String("Bot aim spread multiplier (lower = deadlier)"), 1, 0.200, 3, 5);
+		Global.SetStrafeSpeed = Workshop Setting Integer(Custom String("Hanzo Aim Gauntlet"), Custom String("Bot strafe speed %"), 100, 50, 200, 6);
+		Global.SetHealOnKill = Workshop Setting Integer(Custom String("Hanzo Aim Gauntlet"), Custom String("Heal on kill (headshot kill heals double)"), 30, 0, 250, 7);
+		Global.SetMinRange = Workshop Setting Integer(Custom String("Hanzo Aim Gauntlet"), Custom String("Bot min range (m)"), 12, 5, 40, 8);
+		Global.SetMaxRange = Workshop Setting Integer(Custom String("Hanzo Aim Gauntlet"), Custom String("Bot max range (m)"), 32, 10, 60, 9);
+		Global.SetHanzoBots = Workshop Setting Toggle(Custom String("Hanzo Aim Gauntlet"), Custom String("Enemy Hanzos from wave 4"), True, 10);
+		Global.SetWidowBots = Workshop Setting Toggle(Custom String("Hanzo Aim Gauntlet"), Custom String("Enemy Widowmakers from wave 5"), True, 11);
+		Global.SetTracerBots = Workshop Setting Toggle(Custom String("Hanzo Aim Gauntlet"), Custom String("Enemy Tracers from wave 6"), True, 12);
+		Global.SetBotRespawnDelay = Workshop Setting Real(Custom String("Hanzo Aim Gauntlet"), Custom String("Bot respawn delay (s)"), 1.500, 0.250, 6, 13);
+		Global.RunActive = False;
+		Global.RunEnding = False;
+		Global.BestWave = 0;
+		Global.BestScore = 0;
+		Disable Built-In Game Mode Completion;
+		Disable Built-In Game Mode Scoring;
+		Disable Built-In Game Mode Announcer;
+		Pause Match Time;
+		Disable Inspector Recording;
+	}
+}
+
+rule("Setup: HUD")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		"Top: wave, score and wave progress"
+		Create HUD Text(All Players(Team 1), Custom String("WAVE {0}", Global.Wave), Custom String("SCORE {0}", Global.Score), Null, Top, 0, Color(Orange), Color(White), Color(White), Visible To and String, Default Visibility);
+		Create Progress Bar HUD Text(All Players(Team 1), Global.KillsThisWave / Global.SetKillsPerWave * 100, Custom String("WAVE CLEAR {0} / {1}", Global.KillsThisWave, Global.SetKillsPerWave), Top, 1, Color(Orange), Color(White), Visible To and Values, Default Visibility);
+		Create HUD Text(All Players(Team 1), Null, Custom String("THREAT: {0} bots | {1}% bot damage", Global.ActiveBots, Global.BotDamage), Null, Top, 2, Color(White), Color(Rose), Color(White), Visible To and String, Default Visibility);
+		"Right: live stats"
+		Create HUD Text(All Players(Team 1), Null, Null, Custom String("ACCURACY {0}%  ({1}/{2} arrows)", Round To Integer(Global.Hits / Max(1, Global.Shots) * 100, To Nearest), Global.Hits, Global.Shots), Right, 0, Color(White), Color(White), Color(Sky Blue), Visible To and String, Default Visibility);
+		Create HUD Text(All Players(Team 1), Null, Null, Custom String("HEADSHOT RATE {0}%", Round To Integer(Global.HeadshotHits / Max(1, Global.Hits) * 100, To Nearest)), Right, 1, Color(White), Color(White), Color(Yellow), Visible To and String, Default Visibility);
+		Create HUD Text(All Players(Team 1), Null, Null, Custom String("HEADSHOT STREAK {0}  (best {1})", Global.HeadshotStreak, Global.BestHeadshotStreak), Right, 2, Color(White), Color(White), Color(Yellow), Visible To and String, Default Visibility);
+		Create HUD Text(All Players(Team 1), Null, Null, Custom String("KILLS {0}  |  HEADSHOT KILLS {1}", Global.Kills, Global.HeadshotKills), Right, 3, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+		Create HUD Text(All Players(Team 1), Null, Null, Custom String("BEST RUN: WAVE {0}  |  SCORE {1}", Global.BestWave, Global.BestScore), Right, 4, Color(White), Color(White), Color(Lime Green), Visible To and String, Default Visibility);
+		"Left: how to play"
+		Create HUD Text(All Players(Team 1), Custom String("HANZO AIM GAUNTLET"), Null, Null, Left, 0, Color(Orange), Color(White), Color(White), Visible To and String, Default Visibility);
+		Create HUD Text(All Players(Team 1), Null, Null, Custom String("Kill bots to clear waves. Each wave: more bots, tighter aim, faster strafes."), Left, 1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
+		Create HUD Text(All Players(Team 1), Null, Null, Custom String("Bots aim where you WERE - keep strafing and Lunge to dodge."), Left, 2, Color(White), Color(White), Color(Aqua), Visible To and String, Default Visibility);
+		Create HUD Text(All Players(Team 1), Null, Null, Custom String("No regen. Kills heal you, headshot kills heal double. Die = run over."), Left, 3, Color(White), Color(White), Color(Aqua), Visible To and String, Default Visibility);
+	}
+}
+
+rule("Setup: Register Trainee")
+{
+	event
+	{
+		Ongoing - Each Player;
+		Team 1;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == False;
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		Global.Trainee = Event Player;
+		"Respawns are handled by the run loop so a death always ends the run cleanly."
+		Disable Built-In Game Mode Respawning(Event Player);
+	}
+}
+
+rule("Setup: Team 2 Is Bots Only")
+{
+	event
+	{
+		Ongoing - Each Player;
+		Team 2;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == False;
+	}
+
+	actions
+	{
+		"Team 2 keeps 6 open slots so bots can always spawn; a human who lands there is removed."
+		Big Message(Event Player, Custom String("Solo mode - Team 2 is reserved for bots. Join as a spectator."));
+		Wait(4, Ignore Condition);
+		Remove Player(Event Player);
+	}
+}
+
+// ============================================================
+// RUN FLOW
+// ============================================================
+
+rule("Run: Countdown And Start")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Entity Exists(Global.Trainee) == True;
+		Is Alive(Global.Trainee) == True;
+		Global.RunActive == False;
+		Global.RunEnding == False;
+	}
+
+	actions
+	{
+		Global.Wave = Global.SetStartWave;
+		Global.Score = 0;
+		Global.KillsThisWave = 0;
+		Global.Kills = 0;
+		Global.HeadshotKills = 0;
+		Global.Shots = 0;
+		Global.Hits = 0;
+		Global.HeadshotHits = 0;
+		Global.HeadshotStreak = 0;
+		Call Subroutine(ApplyWaveDifficulty);
+		Heal(Global.Trainee, Null, 1000);
+		Big Message(Global.Trainee, Custom String("GET READY - 3"));
+		Wait(1, Abort When False);
+		Big Message(Global.Trainee, Custom String("2"));
+		Wait(1, Abort When False);
+		Big Message(Global.Trainee, Custom String("1"));
+		Wait(1, Abort When False);
+		Big Message(Global.Trainee, Custom String("WAVE {0} - GO", Global.Wave));
+		Play Effect(Global.Trainee, Buff Explosion Sound, Color(Orange), Global.Trainee, 100);
+		Global.RunActive = True;
+	}
+}
+
+rule("Run: Director Keeps Bot Slots Filled")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.RunActive == True;
+	}
+
+	actions
+	{
+		For Global Variable(SlotIndex, 0, Global.ActiveBots, 1);
+			If(Entity Exists(Players In Slot(Global.SlotIndex, Team 2)) == False);
+				Call Subroutine(PickSpawnPoint);
+				Create Dummy Bot(Random Value In Array(Global.HeroPool), Team 2, Global.SlotIndex, Global.SpawnPoint, Direction Towards(Global.SpawnPoint, Position Of(Global.Trainee)));
+				"Stagger spawns so a fresh wave doesn't open fire in perfect unison."
+				Wait(0.350, Abort When False);
+			End;
+		End;
+		Wait(0.500, Abort When False);
+		Loop If Condition Is True;
+	}
+}
+
+rule("Run: Wave Cleared")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.RunActive == True;
+		Global.KillsThisWave >= Global.SetKillsPerWave;
+	}
+
+	actions
+	{
+		Global.KillsThisWave -= Global.SetKillsPerWave;
+		Global.Score += 250 * Global.Wave;
+		Global.Wave += 1;
+		Call Subroutine(ApplyWaveDifficulty);
+		Heal(Global.Trainee, Null, Max Health(Global.Trainee) * 0.400);
+		Big Message(Global.Trainee, Custom String("WAVE {0}", Global.Wave));
+		Small Message(Global.Trainee, Custom String("Wave bonus +{0}  |  40% health restored", 250 * (Global.Wave - 1)));
+		Play Effect(Global.Trainee, Buff Explosion Sound, Color(Orange), Global.Trainee, 100);
+		Play Effect(All Players(All Teams), Ring Explosion, Color(Orange), Global.Trainee, 6);
+	}
+}
+
+rule("Run: Trainee Died - Run Over")
+{
+	event
+	{
+		Player Died;
+		Team 1;
+		All;
+	}
+
+	conditions
+	{
+		Event Player == Global.Trainee;
+		Global.RunActive == True;
+	}
+
+	actions
+	{
+		Global.RunActive = False;
+		Global.RunEnding = True;
+		Destroy All Dummy Bots;
+		Global.BestWave = Max(Global.BestWave, Global.Wave);
+		Global.BestScore = Max(Global.BestScore, Global.Score);
+		Big Message(Event Player, Custom String("RUN OVER - WAVE {0} - SCORE {1}", Global.Wave, Global.Score));
+		Small Message(Event Player, Custom String("Accuracy {0}%  |  Headshot rate {1}%  |  Best streak {2}", Round To Integer(Global.Hits / Max(1, Global.Shots) * 100, To Nearest), Round To Integer(Global.HeadshotHits / Max(1, Global.Hits) * 100, To Nearest), Global.BestHeadshotStreak));
+		Wait(4, Ignore Condition);
+		Respawn(Event Player);
+		Wait(0.500, Ignore Condition);
+		Global.RunEnding = False;
+	}
+}
+
+rule("Run: Trainee Left")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	conditions
+	{
+		Global.RunActive == True;
+		Entity Exists(Global.Trainee) == False;
+	}
+
+	actions
+	{
+		Global.RunActive = False;
+		Destroy All Dummy Bots;
+	}
+}
+
+// ============================================================
+// DIFFICULTY
+// ============================================================
+
+rule("Sub: Apply Wave Difficulty")
+{
+	event
+	{
+		Subroutine;
+		ApplyWaveDifficulty;
+	}
+
+	actions
+	{
+		Global.WaveStep = Global.Wave - 1;
+		Global.ActiveBots = Min(Global.SetMaxBots, 1 + Round To Integer(Global.WaveStep / 2, Down));
+		Global.BotDamage = Min(500, Global.SetDamageBase + Global.SetDamageStep * Global.WaveStep);
+		"Aim error in metres at the target, and how many seconds behind your movement bots aim"
+		Global.BotSpread = Max(0.250, 1.500 - 0.110 * Global.WaveStep) * Global.SetSpreadMult;
+		Global.BotAimLag = Max(0.030, 0.300 - 0.025 * Global.WaveStep);
+		"Fire rhythm: pause between bursts shrinks, bursts get longer"
+		Global.BotPauseMin = Max(0.350, 1.400 - 0.090 * Global.WaveStep);
+		Global.BotPauseMax = Global.BotPauseMin + 0.900;
+		Global.BotBurstMax = Min(2.200, 0.800 + 0.100 * Global.WaveStep);
+		"Movement: faster direction changes and more jumps"
+		Global.StrafeMin = Max(0.180, 0.700 - 0.040 * Global.WaveStep);
+		Global.StrafeMax = Global.StrafeMin + Max(0.250, 0.800 - 0.050 * Global.WaveStep);
+		Global.JumpChance = Min(0.350, 0.035 * Global.WaveStep);
+		Global.SpawnArc = Min(160, 45 + 10 * Global.WaveStep);
+		"Enemy roster grows with the wave"
+		Global.HeroPool = Array(Hero(Soldier: 76));
+		If(Global.WaveStep >= 1);
+			Modify Global Variable(HeroPool, Append To Array, Hero(Cassidy));
+		End;
+		If(Global.WaveStep >= 2);
+			Modify Global Variable(HeroPool, Append To Array, Hero(Ashe));
+		End;
+		If(Global.SetHanzoBots == True && Global.WaveStep >= 3);
+			Modify Global Variable(HeroPool, Append To Array, Hero(Hanzo));
+		End;
+		If(Global.SetWidowBots == True && Global.WaveStep >= 4);
+			Modify Global Variable(HeroPool, Append To Array, Hero(Widowmaker));
+		End;
+		If(Global.SetTracerBots == True && Global.WaveStep >= 5);
+			Modify Global Variable(HeroPool, Append To Array, Hero(Tracer));
+		End;
+		Set Damage Dealt(All Players(Team 2), Global.BotDamage);
+	}
+}
+
+rule("Sub: Pick Spawn Point In Front Of Trainee")
+{
+	event
+	{
+		Subroutine;
+		PickSpawnPoint;
+	}
+
+	actions
+	{
+		"Random point in an arc in front of the trainee; retry a few times for line of sight. No waits, so this runs atomically."
+		Global.SpawnPoint = Nearest Walkable Position(Position Of(Global.Trainee) + Direction From Angles(Horizontal Facing Angle Of(Global.Trainee) + Random Real(Global.SpawnArc * -1, Global.SpawnArc), 0) * Random Real(Global.SetMinRange, Global.SetMaxRange));
+		Global.SpawnTry = 0;
+		While(Global.SpawnTry < 8 && Is In Line of Sight(Eye Position(Global.Trainee), Global.SpawnPoint + Vector(0, 1.500, 0), Barriers Do Not Block LOS) == False);
+			Global.SpawnPoint = Nearest Walkable Position(Position Of(Global.Trainee) + Direction From Angles(Horizontal Facing Angle Of(Global.Trainee) + Random Real(Global.SpawnArc * -1, Global.SpawnArc), 0) * Random Real(Global.SetMinRange, Global.SetMaxRange));
+			Global.SpawnTry += 1;
+		End;
+	}
+}
+
+// ============================================================
+// BOTS
+// ============================================================
+
+rule("Bot: Setup On Spawn")
+{
+	event
+	{
+		Ongoing - Each Player;
+		Team 2;
+		All;
+	}
+
+	conditions
+	{
+		Is Alive(Event Player) == True;
+		Has Spawned(Event Player) == True;
+	}
+
+	actions
+	{
+		Disable Built-In Game Mode Respawning(Event Player);
+		Set Damage Dealt(Event Player, Global.BotDamage);
+		Set Move Speed(Event Player, Global.SetStrafeSpeed);
+		Event Player.StrafeDir = If-Then-Else(Random Integer(0, 1) == 0, -1, 1);
+		Event Player.RangeDir = 0;
+		Event Player.AimOffset = Vector(0, 0, 0);
+		"Aim at the trainee's chest, offset by spread and by where they were BotAimLag seconds ago. Reevaluates every tick."
+		Start Facing(Event Player, Direction Towards(Eye Position(Event Player), Eye Position(Global.Trainee) - Vector(0, 0.350, 0) - Velocity Of(Global.Trainee) * Global.BotAimLag + Event Player.AimOffset), 720, To World, Direction and Turn Rate);
+		"Strafe relative to facing (bots always face the trainee), plus approach/retreat to hold range."
+		Start Throttle In Direction(Event Player, Vector(Event Player.StrafeDir, 0, Event Player.RangeDir * 0.700), 1, To Player, Replace existing throttle, Direction and Magnitude);
+	}
+}
+
+rule("Bot: Movement And Aim Error")
+{
+	event
+	{
+		Ongoing - Each Player;
+		Team 2;
+		All;
+	}
+
+	conditions
+	{
+		Is Alive(Event Player) == True;
+		Global.RunActive == True;
+	}
+
+	actions
+	{
+		Event Player.StrafeDir = Event Player.StrafeDir * -1;
+		Event Player.RangeDir = If-Then-Else(Distance Between(Position Of(Event Player), Position Of(Global.Trainee)) > Global.SetMaxRange, 1, If-Then-Else(Distance Between(Position Of(Event Player), Position Of(Global.Trainee)) < Global.SetMinRange, -1, 0));
+		Event Player.AimOffset = Vector(Random Real(-1, 1), Random Real(-0.800, 0.800), Random Real(-1, 1)) * Global.BotSpread;
+		If(Random Real(0, 1) < Global.JumpChance);
+			Press Button(Event Player, Button(Jump));
+		End;
+		Wait(Random Real(Global.StrafeMin, Global.StrafeMax), Abort When False);
+		Loop If Condition Is True;
+	}
+}
+
+rule("Bot: Fire In Bursts")
+{
+	event
+	{
+		Ongoing - Each Player;
+		Team 2;
+		All;
+	}
+
+	conditions
+	{
+		Is Alive(Event Player) == True;
+		Global.RunActive == True;
+		Is Alive(Global.Trainee) == True;
+	}
+
+	actions
+	{
+		Wait(Random Real(Global.BotPauseMin, Global.BotPauseMax), Abort When False);
+		If(Is In Line of Sight(Eye Position(Event Player), Eye Position(Global.Trainee), Barriers Do Not Block LOS) == True);
+			"Hitscan bots spray for the burst; enemy Hanzos draw for the burst and loose on release."
+			Start Holding Button(Event Player, Button(Primary Fire));
+			Wait(Random Real(0.450, Global.BotBurstMax), Abort When False);
+			Stop Holding Button(Event Player, Button(Primary Fire));
+		End;
+		Loop If Condition Is True;
+	}
+}
+
+rule("Bot: Died - Respawn As New Hero")
+{
+	event
+	{
+		Player Died;
+		Team 2;
+		All;
+	}
+
+	actions
+	{
+		Stop Holding Button(Event Player, Button(Primary Fire));
+		Wait(Global.SetBotRespawnDelay, Ignore Condition);
+		Abort If(Global.RunActive == False);
+		"Slots above the current bot count are retired; the director refills the rest."
+		If(Slot Of(Event Player) >= Global.ActiveBots);
+			Destroy Dummy Bot(Team 2, Slot Of(Event Player));
+			Abort;
+		End;
+		Start Forcing Player To Be Hero(Event Player, Random Value In Array(Global.HeroPool));
+		Respawn(Event Player);
+		Wait(0.100, Ignore Condition);
+		Call Subroutine(PickSpawnPoint);
+		Teleport(Event Player, Global.SpawnPoint);
+		Play Effect(All Players(Team 1), Bad Explosion, Color(Red), Event Player, 1);
+	}
+}
+
+// ============================================================
+// SCORING (trainee side)
+// ============================================================
+
+rule("Score: Arrow Draw Started")
+{
+	event
+	{
+		Ongoing - Each Player;
+		Team 1;
+		Hanzo;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Primary Fire)) == True;
+		Is Using Ability 2(Event Player) == False;
+		Is Alive(Event Player) == True;
+	}
+
+	actions
+	{
+		Event Player.IsDrawing = True;
+	}
+}
+
+rule("Score: Arrow Released (counts a shot)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		Team 1;
+		Hanzo;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Primary Fire)) == False;
+		Event Player.IsDrawing == True;
+	}
+
+	actions
+	{
+		Event Player.IsDrawing = False;
+		If(Global.RunActive == True && Is Alive(Event Player) == True && Is Using Ability 2(Event Player) == False);
+			Global.Shots += 1;
+		End;
+	}
+}
+
+rule("Score: Arrow Hit")
+{
+	event
+	{
+		Player Dealt Damage;
+		Team 1;
+		Hanzo;
+	}
+
+	conditions
+	{
+		Global.RunActive == True;
+		Is Dummy Bot(Victim) == True;
+		"Exclusion keeps this working even if Event Ability comes back Null"
+		Event Ability != Button(Ability 1);
+		Event Ability != Button(Ultimate);
+		Event Ability != Button(Melee);
+		Is Using Ability 2(Event Player) == False;
+	}
+
+	actions
+	{
+		Global.Hits += 1;
+		If(Event Was Critical Hit);
+			Global.HeadshotHits += 1;
+			Global.HeadshotStreak += 1;
+			Global.BestHeadshotStreak = Max(Global.BestHeadshotStreak, Global.HeadshotStreak);
+			Play Effect(Event Player, Buff Impact Sound, Color(Yellow), Event Player, 60);
+		Else;
+			Global.HeadshotStreak = 0;
+		End;
+	}
+}
+
+rule("Score: Kill")
+{
+	event
+	{
+		Player Dealt Final Blow;
+		Team 1;
+		Hanzo;
+	}
+
+	conditions
+	{
+		Global.RunActive == True;
+		Is Dummy Bot(Victim) == True;
+	}
+
+	actions
+	{
+		Global.Kills += 1;
+		Global.KillsThisWave += 1;
+		If(Event Was Critical Hit);
+			Global.HeadshotKills += 1;
+			Global.Score += 175;
+			Heal(Event Player, Null, Global.SetHealOnKill * 2);
+			Small Message(Event Player, Custom String("HEADSHOT KILL +175"));
+		Else;
+			Global.Score += 100;
+			Heal(Event Player, Null, Global.SetHealOnKill);
+			Small Message(Event Player, Custom String("KILL +100"));
+		End;
+	}
+}
+
+// ============================================================
+// END OF SCRIPT - Hanzo Aim Gauntlet v1.0
+// ============================================================

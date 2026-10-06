@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Validates Overwatch Workshop scripts (.ow) offline using OverPy.
 //
-//   node tools/validate.js                 # every .ow under heroes/ and _template/
+//   node tools/validate.js                 # every .ow under heroes/, modes/, _template/
 //   node tools/validate.js heroes/lucio    # a folder or specific files
 //   node tools/validate.js --strict ...    # warnings fail the run too
 //   node tools/validate.js --opy FILE      # also print the decompiled OverPy
@@ -132,7 +132,7 @@ function silence(fn) {
     const op = require(OVERPY);
     await op.readyPromise;
 
-    const files = (targets.length ? targets : ["heroes", "_template"].map((d) => path.join(ROOT, d)))
+    const files = (targets.length ? targets : ["heroes", "modes", "_template"].map((d) => path.join(ROOT, d)))
         .filter((p) => fs.existsSync(p))
         .flatMap((p) => collect(path.resolve(p), []));
 
