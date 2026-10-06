@@ -232,8 +232,9 @@ These are the ones that have bitten this repo or will.
    Mizuki "Katashiro Return Duration Scalar" and Vendetta "Soaring Slice
    Distance" are dropped on paste. Set them in the in-game UI.
 10. **Map names the importer rejects.** Some names in OverPy's map table fail in the live paste importer. Confirmed: `Workshop Expanse Night` in Skirmish fails with "Expected a map name after 'Expanse'". The validator can't catch these. Enable as few maps as possible, and when an import error names a map, remove that map.
-11. **Lobby settings the importer rejects.** In a Skirmish-only script, the `modes > General` block (`Game Mode Start`, `Hero Limit`, ...) failed to import (E002). Keep `settings` minimal and move tuning into rules where an action exists. Every paste error so far has come from the `settings` block, never from rules.
-12. **HUD positioning.** HUD texts that share a position are centred
+11. **Settings syntax: trust real exports over OverPy.** In `enabled maps`, real maps need variant IDs (`Dorado 972777519512068153`, see E003), and `Kill Cam` takes `Disabled`/`Enabled`, not `Off`/`On` (E002). `docs/reference-exports/` holds a real client export; copy settings lines from it. A rejected entry can make the client fail the whole block and report the block's opening line.
+12. **Lobby settings the importer rejects.** In a Skirmish-only script, the `modes > General` block (`Game Mode Start`, `Hero Limit`, ...) failed to import (E002). Keep `settings` minimal and move tuning into rules where an action exists. Every paste error so far has come from the `settings` block, never from rules.
+13. **HUD positioning.** HUD texts that share a position are centred
     relative to each other. Small messages sometimes don't show.
 
 ---

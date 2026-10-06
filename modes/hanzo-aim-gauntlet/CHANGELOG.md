@@ -1,5 +1,13 @@
 # Changelog — Hanzo Aim Gauntlet
 
+## [v1.4] - 2026-10-06
+### Fixed
+- The in-game import failed with "Expected '{' after 'modes'" (E003). Real maps now carry the variant IDs the client expects (copied from real 2025–2026 exports).
+- **Softlock:** a trainee who died outside a run (e.g. during the countdown) never respawned. They now respawn after 2 seconds.
+- **Bots kept firing:** a bot whose burst was interrupted when the trainee entered spawn, died, or the run stopped kept holding the trigger. A new rule releases it.
+- Storm Arrows hits are also excluded by `Event Ability != Button(Ability 2)`, so they no longer leak into accuracy.
+- The HUD showed `WAVE 0` before the first run. It now shows the starting wave.
+
 ## [v1.3] - 2026-10-06
 ### Changed
 - Real maps replace Workshop Expanse: Dorado, Eichenwalde, Havana, Hollywood, Junkertown, King's Row, Numbani, Rialto and Route 66. You get real terrain, cover and the normal health packs. Every map name is taken from a real exported Skirmish script.

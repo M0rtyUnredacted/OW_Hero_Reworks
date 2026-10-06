@@ -1,6 +1,6 @@
 // ============================================================
 // MODE: Hanzo Aim Gauntlet
-// VERSION: v1.3
+// VERSION: v1.4
 // LAST UPDATED: 2026-10-06
 // DESCRIPTION: Survival aim trainer for Hanzo. Strafing, jumping
 // bots shoot back; every wave adds bots, tightens their aim and
@@ -26,7 +26,7 @@ settings
 {
 	main
 	{
-		Description: "Hanzo Aim Gauntlet v1.3 - survival aim trainer on real maps. Bots strafe, use cover and shoot back; each wave they aim better. Source: github.com/M0rtyUnredacted/OW_Hero_Reworks"
+		Description: "Hanzo Aim Gauntlet v1.4 - survival aim trainer on real maps. Bots strafe, use cover and shoot back; each wave they aim better. Source: github.com/M0rtyUnredacted/OW_Hero_Reworks"
 		Mode Name: "Hanzo Aim Gauntlet"
 	}
 
@@ -44,15 +44,15 @@ settings
 		{
 			enabled maps
 			{
-				Dorado
-				Eichenwalde
-				Havana
-				Hollywood
-				Junkertown
-				King's Row
-				Numbani
-				Rialto
-				Route 66
+				Dorado 972777519512068153 972777519512068292
+				Eichenwalde 972777519512068154 972777519512068292
+				Havana 972777519512068153 972777519512068154
+				Hollywood 972777519512068153 972777519512068154
+				Junkertown 972777519512068154
+				King's Row 972777519512068153 972777519512068292
+				Numbani 972777519512068154
+				Rialto 972777519512068154 972777519512068292
+				Route 66 972777519512068154 972777519512068153 972777519512068194
 			}
 		}
 	}
@@ -166,6 +166,7 @@ rule("Setup: Lobby Tunables")
 		Global.SetBotRespawnDelay = Workshop Setting Real(Custom String("Hanzo Aim Gauntlet"), Custom String("Bot respawn delay (s)"), 1.500, 0.250, 6, 13);
 		Global.RunActive = False;
 		Global.RunEnding = False;
+		Global.Wave = Global.SetStartWave;
 		Global.BestWave = 0;
 		Global.BestScore = 0;
 		Disable Built-In Game Mode Completion;
@@ -349,7 +350,7 @@ rule("Run: Wave Cleared")
 	}
 }
 
-rule("Run: Trainee Died - Run Over")
+rule("Run: Trainee Died - Run Over Or Plain Respawn")
 {
 	event
 	{
@@ -361,11 +362,16 @@ rule("Run: Trainee Died - Run Over")
 	conditions
 	{
 		Event Player == Global.Trainee;
-		Global.RunActive == True;
 	}
 
 	actions
 	{
+		"Built-in respawn is disabled, so every trainee death must respawn here - including deaths during the countdown."
+		If(Global.RunActive == False);
+			Wait(2, Ignore Condition);
+			Respawn(Event Player);
+			Abort;
+		End;
 		Global.RunActive = False;
 		Global.RunEnding = True;
 		Destroy All Dummy Bots;
@@ -565,6 +571,27 @@ rule("Bot: Fire In Bursts")
 	}
 }
 
+rule("Bot: Release Trigger When Firing Must Stop")
+{
+	event
+	{
+		Ongoing - Each Player;
+		Team 2;
+		All;
+	}
+
+	conditions
+	{
+		"Fire In Bursts aborts mid-burst when its conditions fail, which would leave Primary Fire held."
+		Global.RunActive == False || Is Alive(Global.Trainee) == False || Is In Spawn Room(Global.Trainee) == True;
+	}
+
+	actions
+	{
+		Stop Holding Button(Event Player, Button(Primary Fire));
+	}
+}
+
 rule("Bot: Reposition When Out Of Sight")
 {
 	event
@@ -686,6 +713,7 @@ rule("Score: Arrow Hit")
 		Event Ability != Button(Ability 1);
 		Event Ability != Button(Ultimate);
 		Event Ability != Button(Melee);
+		Event Ability != Button(Ability 2);
 		Is Using Ability 2(Event Player) == False;
 	}
 
@@ -736,5 +764,5 @@ rule("Score: Kill")
 }
 
 // ============================================================
-// END OF SCRIPT - Hanzo Aim Gauntlet v1.3
+// END OF SCRIPT - Hanzo Aim Gauntlet v1.4
 // ============================================================

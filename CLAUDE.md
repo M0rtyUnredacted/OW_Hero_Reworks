@@ -19,7 +19,8 @@ human workflow and naming rules.
    - `docs/api/heroes-and-events.md` — hero/ability names, event names
    - `docs/api/hero-settings.md` — per-hero lobby settings (cooldown %, health %...)
    `grep -n "### Set Ability" docs/api/actions.md` is the fastest lookup.
-4. **Prefer lobby settings over rules** for flat tuning (cooldowns, health,
+4. **Copy `settings` lines from `docs/reference-exports/`** (real client exports). OverPy's settings data has been wrong about the live client 3 times (see the error log). If a needed line isn't there, ask the coordinator for an in-game export (Settings > Copy) before guessing.
+5. **Prefer lobby settings over rules** for flat tuning (cooldowns, health,
    damage, ammo, ult charge). They cost zero server load and can't desync.
 
 ## After every edit

@@ -1,0 +1,204 @@
+// Settings block from a real in-game export (OW2 client, 2026-07-08).
+// Source: https://github.com/javierfd81/ow_mvr_og/blob/f0d0106/codes/mvr_og.code
+// Ground truth for current settings syntax. Copy exact lines from here when they're needed.
+
+settings
+{
+	main
+	{
+		Description: "For those who enjoy the original Mercy VS Rein, this is for you! No silenced souls. No broken maps. Flying Reins and Mercy GA galore!\n\r\nCredits to all OW players, like you, for the reverted changes.\r\nCredits to the original code, W77BP under game mode author VOZ."
+		Mode Name: "OG mvr"
+	}
+
+	lobby
+	{
+		Data Center Preference: USA - Central
+		Map Rotation: After A Game
+		Match Voice Chat: Enabled
+		Max Spectators: 3
+		Max Team 1 Players: 2
+		Max Team 2 Players: 10
+		Return To Lobby: Never
+		Team Balancing: After A Game
+	}
+
+	modes
+	{
+		Capture the Flag
+		{
+			Damage Interrupts Flag Interaction: Enabled
+			Flag Dropped Lock Time: 10.0
+			Flag Pickup Time: 5.0
+			Flag Return Time: 0.0
+			Flag Score Respawn Time: 20.0
+
+			enabled maps
+			{
+				Busan Downtown Lunar New Year 972777519512063901
+			}
+		}
+
+		Elimination
+		{
+			Capture Objective Tiebreaker: Disabled
+			Draw After Match Time Elapsed With No Tiebreaker: 175
+
+			disabled maps
+			{
+				Black Forest
+				Ecopoint: Antarctica
+				Lijiang Control Center Lunar New Year
+				Lijiang Garden Lunar New Year
+				Lijiang Night Market Lunar New Year
+				Workshop Chamber
+				Workshop Expanse
+				Workshop Expanse Night
+				Workshop Green Screen
+				Workshop Island
+				Workshop Island Night
+			}
+		}
+
+		Skirmish
+		{
+			Limit Valid Control Points: First
+
+			enabled maps
+			{
+				Blizzard World 972777519512068154 972777519512068194
+				Busan 972777519512068154 972777519512068153 972777519512068194
+				Circuit royal 972777519512068154 972777519512068153
+				Colosseo 972777519512068154 972777519512068292
+				Dorado 972777519512068292 972777519512068153
+				Eichenwalde 972777519512068154 972777519512068292
+				Esperança 972777519512068154
+				Havana 972777519512068154 972777519512068153
+				Hollywood 972777519512068154 972777519512068153
+				Horizon Lunar Colony 972777519512068154
+				Junkertown 972777519512068154 972777519512068153
+				New Queen Street 972777519512068154 972777519512068197
+				Numbani 972777519512068154
+				Paraíso 972777519512068154 972777519512068292
+				Paris 972777519512068292
+				Rialto 972777519512068154 972777519512068292
+				Route 66 972777519512068154 972777519512068153 972777519512068194
+				Samoa 972777519512068154
+				Shambali Monastery 972777519512068153
+				Temple of Anubis 972777519512068154
+				Volskaya Industries 972777519512068292
+			}
+		}
+
+		Team Deathmatch
+		{
+			Game Length In Minutes: 5
+			Mercy Resurrect Counteracts Kills: Off
+			Score To Win: 3
+			Self Initiated Respawn: Off
+
+			enabled maps
+			{
+				Blizzard World Winter 972777519512063901
+				Château Guillard Halloween 972777519512063901
+				Dorado 972777519512068292 972777519512068153
+				Eichenwalde Halloween 972777519512063901
+				Hanamura Winter 972777519512063901
+				Hollywood Halloween 972777519512063901
+				Horizon Lunar Colony 972777519512068154
+				Kanezaka 972777519512063901
+				King's Row 972777519512068153
+				King's Row Winter 972777519512063901
+				Malevento 972777519512063901
+				Paris 972777519512068292
+				Petra 972777519512068154
+				Route 66 972777519512068154 972777519512068153
+				Temple of Anubis 972777519512068154
+				Volskaya Industries 972777519512068292
+			}
+		}
+
+		General
+		{
+			Allow Hero Switching: Disabled
+			Game Mode Start: Immediately
+			Hero Limit: Off
+			Kill Cam: Disabled
+			Respawn As Random Hero: Enabled
+			Spawn Health Packs: Disabled
+		}
+	}
+
+	heroes
+	{
+		Team 1
+		{
+			enabled heroes
+			{
+				Reinhardt
+			}
+		}
+
+		Team 2
+		{
+			enabled heroes
+			{
+				Mercy
+			}
+		}
+
+		General
+		{
+			Mercy
+			{
+				Ammunition Clip Size Scalar: 166%
+				Damage Dealt: 200%
+				Damage Received: 10%
+				Guardian Angel Cooldown Time: 0%
+				Healing Dealt: 10%
+				Healing Received: 25%
+				Health: 10%
+				Jump Vertical Speed: 180%
+				Movement Speed: 300%
+				Projectile Speed: 4%
+				Resurrect Cooldown Time: 250%
+				Ultimate Generation - Combat Valkyrie: 0%
+				Ultimate Generation - Passive Valkyrie: 0%
+			}
+
+			Reinhardt
+			{
+				Barrier Field Recharge Rate: 0%
+				Charge Cooldown Time: 7%
+				Charge Knockback Scalar: 69%
+				Fire Strike Cooldown Time: 30%
+				Health: 500%
+				Movement Speed: 300%
+				Projectile Speed: 300%
+				Quick Melee: Disabled
+				Rocket Hammer Knockback Scalar: 69%
+				Spawn With Ultimate Ready: Enabled
+				Ultimate Generation - Combat Earthshatter: 300%
+				Ultimate Generation - Passive Earthshatter: 175%
+				Ultimate Generation Earthshatter: 175%
+			}
+		}
+	}
+
+	workshop
+	{
+		Double Jump Disable When Stunned: Off
+		Double Jump Disabled When Stunned Duration: 2.000
+		Double Jump Disabled While Stunned Duration: 2.000
+		Experimental Charge Only: On
+		GA Recharge Rate: 7.000
+		Mercy Back StabRein Kill To Resurrect: On
+		Mercy Boop To Earn Invis: On
+		Multi Jump Count: 10
+		Rein Heal Per Elim: On
+		Respawn On Envir Death: On
+		Respawn On Map: On
+		Sacrifice Health for GA Charge: On
+		Sacrifice Health for Ult Charge: On
+		Super Jump CoolDown: 15
+	}
+}

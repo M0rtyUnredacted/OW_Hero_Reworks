@@ -30,7 +30,7 @@ A collection of custom hero reworks built in the Overwatch Workshop. Each rework
 
 | Mode | Version | Script | Last Updated |
 |---|---|---|---|
-| [Hanzo Aim Gauntlet](modes/hanzo-aim-gauntlet/) | v1.3 | [v1.3](modes/hanzo-aim-gauntlet/hanzo-aim-gauntlet.ow) | 2026-10-06 |
+| [Hanzo Aim Gauntlet](modes/hanzo-aim-gauntlet/) | v1.4 | [v1.4](modes/hanzo-aim-gauntlet/hanzo-aim-gauntlet.ow) | 2026-10-06 |
 
 ---
 

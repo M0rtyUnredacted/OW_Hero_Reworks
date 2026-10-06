@@ -74,7 +74,17 @@ const KNOWN_ERRORS = JSON.parse(fs.readFileSync(path.join(__dirname, "known-erro
 function lintRaw(src) {
     const issues = [];
     let inString = false;
+    // E003: inside an `enabled maps` list the live client requires every real
+    // map to carry variant IDs ("Dorado 972777519512068153"). Workshop maps
+    // and `disabled maps` lists can be bare names.
+    let inEnabledMaps = false;
     src.split(/\r?\n/).forEach((line, i) => {
+        const t = line.trim();
+        if (/^enabled maps$/.test(t)) inEnabledMaps = true;
+        else if (inEnabledMaps && t === "}") inEnabledMaps = false;
+        else if (inEnabledMaps && t && t !== "{" && !t.startsWith("Workshop ") && !/\s\d{6,}$/.test(t)) {
+            issues.push({ line: i + 1, id: "E003-map-variant-ids", msg: "Real maps in `enabled maps` need variant IDs after the name, e.g. `Dorado 972777519512068153 972777519512068292`. Copy them from docs/reference-exports/ or docs/api. See docs/ERROR_LOG.md#e003", text: t, error: true });
+        }
         for (const l of LINTS) {
             if (l.test(line)) issues.push({ line: i + 1, id: l.id, msg: l.msg, text: line.trim() });
         }
