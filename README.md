@@ -26,6 +26,18 @@ A collection of custom hero reworks built in the Overwatch Workshop. Each rework
 
 ---
 
+## Tooling (for the technical director)
+
+| Command | What it does |
+|---|---|
+| `tools/setup.sh` | Builds the pinned OverPy toolchain into `.tools/` (runs automatically in Claude Code sessions) |
+| `node tools/validate.js [path]` | Checks `.ow` scripts offline: unknown functions, wrong arguments, bad names, misspelled lobby settings, engine pitfalls |
+| `node tools/gen-api-docs.js` | Regenerates `docs/api/` after bumping OverPy |
+
+Reference docs: [`docs/WORKSHOP_GUIDE.md`](docs/WORKSHOP_GUIDE.md) (engine behaviour, bugs, patterns, polish checklist) and [`docs/api/`](docs/api/) (exact names for every action, value, constant, hero and lobby setting).
+
+---
+
 ## Adding a New Hero Rework
 
 1. Copy the `_template/` folder and rename it to the hero's slug (e.g., `heroes/soldier-76/`)
@@ -43,7 +55,12 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for naming rules and full workflow.
 OW_Hero_Reworks/
 ├── README.md              ← You are here
 ├── CONTRIBUTING.md        ← Workflow guide for coordinators
+├── CLAUDE.md              ← Instructions for AI sessions (technical director)
 ├── .gitignore
+├── docs/
+│   ├── WORKSHOP_GUIDE.md  ← Engine semantics, bugs, patterns, polish checklist
+│   └── api/               ← Generated exact-name reference (do not hand-edit)
+├── tools/                 ← setup.sh, validate.js, gen-api-docs.js
 ├── _template/             ← Copy this to start a new hero
 │   ├── hero.ow
 │   ├── design-doc.md
