@@ -4,7 +4,7 @@
 A solo survival aim trainer for Hanzo. You fight bots that strafe, jump and shoot back. Each cleared wave adds bots, tightens their aim and speeds up their movement. When you die, the run ends and you get your stats.
 
 ## Core Loop
-1. A 3-second countdown, then wave 1 starts with one Soldier: 76 bot in front of you.
+1. Leave spawn. A 3-second countdown follows, then wave 1 starts with one Soldier: 76 bot in front of you.
 2. Each kill fills the wave bar. Five kills (tunable) clears the wave.
 3. Clearing a wave grants +250 × wave score and restores 40% health. The next wave is harder.
 4. You die: the run ends. You see a summary, your best run is saved for the session and a new run auto-starts.
@@ -33,7 +33,14 @@ These heroes join the pool as you clear waves. Bot health is 80%, so a fully cha
 - Wave 5: + Widowmaker (toggleable)
 - Wave 6: + Tracer (small and fast, toggleable)
 
+## Maps and Cover
+- **Maps:** Skirmish on real maps: Dorado, Eichenwalde, Havana, Hollywood, Junkertown, King's Row, Numbani, Rialto and Route 66. You get real terrain, cover, high ground and the normal health packs.
+- **Spawning:** bots spawn at a random walkable point in an arc in front of you. Up to 8 points are tried to find one with line of sight.
+- **Reacting to cover:** a bot that can't see you for 4 seconds repositions. That keeps the pressure on when you break line of sight, and it also means hiding behind cover only buys you about 4 seconds.
+- **Spawn room:** the run starts only once you leave spawn. Bots don't fire while you're inside it.
+
 ## Healing
+- Health packs on the map.
 - Passive regen is off.
 - A kill heals 30. A headshot kill heals 60.
 - Clearing a wave heals 40% of max health.
@@ -59,7 +66,7 @@ These heroes join the pool as you clear waves. Bot health is 80%, so a fully cha
 - Bot respawn delay
 
 ## Known Limitations
-- **Workshop maps only.** It runs on Workshop Expanse: flat with no cover, so it's purely about aim and movement. Spawn points are picked in front of you, so other maps would work if you enable them, but bots may spawn on awkward geometry.
+- **No pathfinding.** Bots walk in straight lines to keep their range, so on real maps they can bump into walls. Repositioning covers that, but sometimes a bot will appear somewhere odd, such as on a roof.
 - **Shot counting is approximate.** Shots are counted on primary-fire release. A tap that's cancelled before an arrow leaves would still count.
 - **Bots don't use abilities**, only primary fire.
 - **The match is solo.** A human who joins Team 2 is removed.

@@ -1,6 +1,6 @@
 // ============================================================
 // MODE: Hanzo Aim Gauntlet
-// VERSION: v1.2
+// VERSION: v1.3
 // LAST UPDATED: 2026-10-06
 // DESCRIPTION: Survival aim trainer for Hanzo. Strafing, jumping
 // bots shoot back; every wave adds bots, tightens their aim and
@@ -14,7 +14,10 @@
 //   - Kill bots to fill the wave bar. A full bar = next wave.
 //   - Bots aim where you WERE (aim lag) with random spread, so
 //     strafing and Lunge are your defence. Both shrink each wave.
-//   - No passive regen. Kills heal you; headshot kills heal more.
+//   - No passive regen. Kills heal you (headshot kills heal more),
+//     and the map's normal health packs are up for grabs.
+//   - Real maps with cover. The run starts when you leave spawn;
+//     bots that lose sight of you for a few seconds reposition.
 //   - Accuracy counts charged/tapped arrows only (Storm Arrows
 //     are excluded from accuracy but still kill).
 // ============================================================
@@ -23,7 +26,7 @@ settings
 {
 	main
 	{
-		Description: "Hanzo Aim Gauntlet v1.2 - survival aim trainer. Bots strafe, jump and shoot back; each wave they aim better. Source: github.com/M0rtyUnredacted/OW_Hero_Reworks"
+		Description: "Hanzo Aim Gauntlet v1.3 - survival aim trainer on real maps. Bots strafe, use cover and shoot back; each wave they aim better. Source: github.com/M0rtyUnredacted/OW_Hero_Reworks"
 		Mode Name: "Hanzo Aim Gauntlet"
 	}
 
@@ -41,7 +44,15 @@ settings
 		{
 			enabled maps
 			{
-				Workshop Expanse
+				Dorado
+				Eichenwalde
+				Havana
+				Hollywood
+				Junkertown
+				King's Row
+				Numbani
+				Rialto
+				Route 66
 			}
 		}
 	}
@@ -186,9 +197,10 @@ rule("Setup: HUD")
 		Create HUD Text(All Players(Team 1), Null, Null, Custom String("BEST RUN: WAVE {0}  |  SCORE {1}", Global.BestWave, Global.BestScore), Right, 4, Color(White), Color(White), Color(Lime Green), Visible To and String, Default Visibility);
 		"Left: how to play"
 		Create HUD Text(All Players(Team 1), Custom String("HANZO AIM GAUNTLET"), Null, Null, Left, 0, Color(Orange), Color(White), Color(White), Visible To and String, Default Visibility);
+		Create HUD Text(Filtered Array(All Players(Team 1), Global.RunActive == False && Global.RunEnding == False), Custom String("LEAVE SPAWN TO START THE RUN"), Null, Null, Top, 3, Color(Yellow), Color(White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(All Players(Team 1), Null, Null, Custom String("Kill bots to clear waves. Each wave: more bots, tighter aim, faster strafes."), Left, 1, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 		Create HUD Text(All Players(Team 1), Null, Null, Custom String("Bots aim where you WERE - keep strafing and Lunge to dodge."), Left, 2, Color(White), Color(White), Color(Aqua), Visible To and String, Default Visibility);
-		Create HUD Text(All Players(Team 1), Null, Null, Custom String("No regen. Kills heal you, headshot kills heal double. Die = run over."), Left, 3, Color(White), Color(White), Color(Aqua), Visible To and String, Default Visibility);
+		Create HUD Text(All Players(Team 1), Null, Null, Custom String("No regen. Kills and health packs heal you. Die = run over."), Left, 3, Color(White), Color(White), Color(Aqua), Visible To and String, Default Visibility);
 	}
 }
 
@@ -253,6 +265,7 @@ rule("Run: Countdown And Start")
 	{
 		Entity Exists(Global.Trainee) == True;
 		Is Alive(Global.Trainee) == True;
+		Is In Spawn Room(Global.Trainee) == False;
 		Global.RunActive == False;
 		Global.RunEnding == False;
 	}
@@ -535,6 +548,8 @@ rule("Bot: Fire In Bursts")
 		Is Alive(Event Player) == True;
 		Global.RunActive == True;
 		Is Alive(Global.Trainee) == True;
+		"No free damage on someone healing in spawn"
+		Is In Spawn Room(Global.Trainee) == False;
 	}
 
 	actions
@@ -547,6 +562,32 @@ rule("Bot: Fire In Bursts")
 			Stop Holding Button(Event Player, Button(Primary Fire));
 		End;
 		Loop If Condition Is True;
+	}
+}
+
+rule("Bot: Reposition When Out Of Sight")
+{
+	event
+	{
+		Ongoing - Each Player;
+		Team 2;
+		All;
+	}
+
+	conditions
+	{
+		Is Alive(Event Player) == True;
+		Global.RunActive == True;
+		Is In Line of Sight(Eye Position(Event Player), Eye Position(Global.Trainee), Barriers Do Not Block LOS) == False;
+	}
+
+	actions
+	{
+		"On real maps a bot can strafe behind cover or a wall. If it can't see you for 4s it flanks to a new spot."
+		Wait(4, Abort When False);
+		Call Subroutine(PickSpawnPoint);
+		Teleport(Event Player, Global.SpawnPoint);
+		Play Effect(All Players(Team 1), Bad Explosion, Color(Red), Event Player, 1);
 	}
 }
 
@@ -695,5 +736,5 @@ rule("Score: Kill")
 }
 
 // ============================================================
-// END OF SCRIPT - Hanzo Aim Gauntlet v1.2
+// END OF SCRIPT - Hanzo Aim Gauntlet v1.3
 // ============================================================

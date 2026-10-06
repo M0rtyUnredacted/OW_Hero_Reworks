@@ -1,5 +1,13 @@
 # Changelog — Hanzo Aim Gauntlet
 
+## [v1.3] - 2026-10-06
+### Changed
+- Real maps replace Workshop Expanse: Dorado, Eichenwalde, Havana, Hollywood, Junkertown, King's Row, Numbani, Rialto and Route 66. You get real terrain, cover and the normal health packs. Every map name is taken from a real exported Skirmish script.
+- The run starts when the trainee leaves spawn, and bots hold fire while the trainee is in the spawn room.
+### Added
+- A bot that loses line of sight to the trainee for 4 seconds repositions to a new spot in front of them.
+- A "LEAVE SPAWN TO START THE RUN" HUD prompt.
+
 ## [v1.2] - 2026-10-06
 ### Fixed
 - The in-game import failed with "Expected a game mode setting after 'General {'" (E002). The `modes > General` block is removed.
