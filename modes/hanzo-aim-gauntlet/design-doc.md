@@ -59,7 +59,7 @@ These heroes join the pool as you clear waves. Bot health is 80%, so a fully cha
 - Bot respawn delay
 
 ## Known Limitations
-- **Workshop maps only.** It runs on Workshop Expanse (Day and Night): flat with no cover, so it's purely about aim and movement. Spawn points are picked in front of you, so other maps would work if you enable them, but bots may spawn on awkward geometry.
+- **Workshop maps only.** It runs on Workshop Expanse: flat with no cover, so it's purely about aim and movement. Spawn points are picked in front of you, so other maps would work if you enable them, but bots may spawn on awkward geometry.
 - **Shot counting is approximate.** Shots are counted on primary-fire release. A tap that's cancelled before an arrow leaves would still count.
 - **Bots don't use abilities**, only primary fire.
 - **The match is solo.** A human who joins Team 2 is removed.

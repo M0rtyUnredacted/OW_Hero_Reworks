@@ -1,5 +1,9 @@
 # Changelog — Hanzo Aim Gauntlet
 
+## [v1.1] - 2026-10-06
+### Fixed
+- The in-game import failed with "Expected a map name after 'Expanse'". The paste importer rejects `Workshop Expanse Night`, even though OverPy's map table lists it, so it's removed. The mode now uses only Workshop Expanse.
+
 ## [v1.0] - 2026-10-06
 ### Added
 - The full mode is in `hanzo-aim-gauntlet.ow`.
