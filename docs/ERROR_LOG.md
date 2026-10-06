@@ -9,6 +9,20 @@ For each entry:
 
 ---
 
+## E002 — "Expected a game mode setting after 'General {'"
+- **Date:** 2026-10-06
+- **Script:** `modes/hanzo-aim-gauntlet/hanzo-aim-gauntlet.ow` v1.1, line 50 (also present in `_template/hero.ow`)
+- **Symptom:** The in-game import failed: `Error: Expected a game mode setting after 'General {' on line 50`.
+- **Root cause:** The script had a `modes > General` block (`Game Mode Start: Immediately`, `Hero Limit`, `Kill Cam`, `Respawn Time Scalar`) with only Skirmish enabled. The importer rejected the first setting in it. OverPy's schema and older real exports both accept that block, so validation passed. Skirmish probably doesn't expose these settings in the current client. Only the first line was confirmed bad; the other three are untested.
+- **Fix:** v1.2 removes the whole `modes > General` block from the mode and the template.
+  - The `heroes > Team 2` block (`Health: 80%`, `Passive Health Regeneration`, `Ultimate Ability`) is also gone, to cut the number of untested settings.
+  - Bot health is now set in a rule: `Set Max Health(Event Player, 80)`.
+- **Prevention:**
+  - `tools/known-errors.json` rule `E002-skirmish-general-settings` flags those four settings in any file that enables Skirmish.
+  - **Lesson:** every lobby setting is something the live client can reject. Keep the `settings` block minimal: map list, lobby slots, enabled heroes and essential per-hero toggles. Do everything else in rules, using actions from `docs/api/actions.md`.
+
+---
+
 ## E001 — "Expected a map name after 'Expanse'"
 - **Date:** 2026-10-06
 - **Script:** `modes/hanzo-aim-gauntlet/hanzo-aim-gauntlet.ow` v1.0, line 45

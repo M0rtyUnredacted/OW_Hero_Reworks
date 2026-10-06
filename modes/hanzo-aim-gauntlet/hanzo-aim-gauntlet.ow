@@ -1,6 +1,6 @@
 // ============================================================
 // MODE: Hanzo Aim Gauntlet
-// VERSION: v1.1
+// VERSION: v1.2
 // LAST UPDATED: 2026-10-06
 // DESCRIPTION: Survival aim trainer for Hanzo. Strafing, jumping
 // bots shoot back; every wave adds bots, tightens their aim and
@@ -23,7 +23,7 @@ settings
 {
 	main
 	{
-		Description: "Hanzo Aim Gauntlet v1.1 - survival aim trainer. Bots strafe, jump and shoot back; each wave they aim better. Source: github.com/M0rtyUnredacted/OW_Hero_Reworks"
+		Description: "Hanzo Aim Gauntlet v1.2 - survival aim trainer. Bots strafe, jump and shoot back; each wave they aim better. Source: github.com/M0rtyUnredacted/OW_Hero_Reworks"
 		Mode Name: "Hanzo Aim Gauntlet"
 	}
 
@@ -44,14 +44,6 @@ settings
 				Workshop Expanse
 			}
 		}
-
-		General
-		{
-			Game Mode Start: Immediately
-			Hero Limit: Off
-			Kill Cam: Off
-			Respawn Time Scalar: 0%
-		}
 	}
 
 	heroes
@@ -68,13 +60,6 @@ settings
 			{
 				Hanzo
 			}
-		}
-
-		Team 2
-		{
-			Health: 80%
-			Passive Health Regeneration: Off
-			Ultimate Ability: Off
 		}
 	}
 }
@@ -494,6 +479,8 @@ rule("Bot: Setup On Spawn")
 	actions
 	{
 		Disable Built-In Game Mode Respawning(Event Player);
+		"80% health so a fully charged Hanzo headshot kills every bot hero"
+		Set Max Health(Event Player, 80);
 		Set Damage Dealt(Event Player, Global.BotDamage);
 		Set Move Speed(Event Player, Global.SetStrafeSpeed);
 		Event Player.StrafeDir = If-Then-Else(Random Integer(0, 1) == 0, -1, 1);
@@ -708,5 +695,5 @@ rule("Score: Kill")
 }
 
 // ============================================================
-// END OF SCRIPT - Hanzo Aim Gauntlet v1.1
+// END OF SCRIPT - Hanzo Aim Gauntlet v1.2
 // ============================================================

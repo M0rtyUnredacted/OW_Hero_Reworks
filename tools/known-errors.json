@@ -3,5 +3,11 @@
         "id": "E001-expanse-night",
         "pattern": "^\\s*Workshop Expanse Night\\s*$",
         "message": "The in-game importer rejects 'Workshop Expanse Night' in a map list (\"Expected a map name after 'Expanse'\"). Use 'Workshop Expanse'. See docs/ERROR_LOG.md#e001"
+    },
+    {
+        "id": "E002-skirmish-general-settings",
+        "pattern": "^\\s*(Game Mode Start|Hero Limit|Kill Cam|Respawn Time Scalar)\\s*:",
+        "ifFile": "^\\s*Skirmish\\s*$",
+        "message": "In a Skirmish script the importer rejected the modes > General block (\"Expected a game mode setting after 'General {'\"). Leave these out or set them in the in-game UI. See docs/ERROR_LOG.md#e002"
     }
 ]

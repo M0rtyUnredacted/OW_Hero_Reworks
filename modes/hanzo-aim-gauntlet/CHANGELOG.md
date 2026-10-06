@@ -1,5 +1,12 @@
 # Changelog — Hanzo Aim Gauntlet
 
+## [v1.2] - 2026-10-06
+### Fixed
+- The in-game import failed with "Expected a game mode setting after 'General {'" (E002). The `modes > General` block is removed.
+### Changed
+- Bot 80% health moved from lobby settings into a rule (`Set Max Health`), and the `heroes > Team 2` block is removed. Bots don't use ultimates, so that setting wasn't needed.
+- The kill cam and respawn timer now use game defaults. Respawns were already handled by script, so play is unaffected.
+
 ## [v1.1] - 2026-10-06
 ### Fixed
 - The in-game import failed with "Expected a map name after 'Expanse'". The paste importer rejects `Workshop Expanse Night`, even though OverPy's map table lists it, so it's removed. The mode now uses only Workshop Expanse.

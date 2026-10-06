@@ -34,13 +34,6 @@ settings
 		Skirmish
 		{
 		}
-
-		General
-		{
-			Game Mode Start: Immediately
-			Hero Limit: Off
-			Respawn Time Scalar: 30%
-		}
 	}
 
 	heroes

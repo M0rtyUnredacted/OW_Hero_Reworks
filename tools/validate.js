@@ -66,6 +66,8 @@ const LINTS = [
 const KNOWN_ERRORS = JSON.parse(fs.readFileSync(path.join(__dirname, "known-errors.json"), "utf8")).map((e) => ({
     id: e.id,
     re: new RegExp(e.pattern, e.flags || ""),
+    // Optional: only applies when the whole file also matches this.
+    ifFile: e.ifFile ? new RegExp(e.ifFile, "m") : null,
     msg: e.message,
 }));
 
@@ -77,6 +79,7 @@ function lintRaw(src) {
             if (l.test(line)) issues.push({ line: i + 1, id: l.id, msg: l.msg, text: line.trim() });
         }
         for (const k of KNOWN_ERRORS) {
+            if (k.ifFile && !k.ifFile.test(src)) continue;
             if (k.re.test(line)) issues.push({ line: i + 1, id: k.id, msg: k.msg, text: line.trim(), error: true });
         }
         // Custom String literals are capped at 128 characters in-game.
